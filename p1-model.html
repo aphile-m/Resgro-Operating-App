@@ -1,0 +1,1492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Resgro Capital — P1 Financial Model</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#09090F; --surf:#111120; --surf2:#181828; --surf3:#1F1F38;
+  --border:#262640; --border2:#303058;
+  --gold:#C8952A; --gold-l:#E8B850; --gold-d:#9A6E1A;
+  --text:#EDE8E0; --muted:#8A8799; --faint:#4A4862;
+  --green:#3DB87A; --red:#E05050; --blue:#6A9EEE; --purple:#A090E8;
+  --ag-col:#3DB87A; --iroko-col:#C8952A;
+  --inp:#0D0D1E; --inp-b:#3A3A60;
+  --r:5px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;font-size:13px;overflow-x:hidden}
+
+/* ── HEADER ── */
+header{background:linear-gradient(135deg,#0C0C1E,#141428);border-bottom:1px solid var(--gold-d);padding:0 22px;display:flex;align-items:center;justify-content:space-between;height:52px;position:sticky;top:0;z-index:200}
+.brand{display:flex;align-items:baseline;gap:10px}
+.brand-name{font-family:'Playfair Display',serif;font-size:19px;font-weight:700;color:var(--gold)}
+.brand-sub{font-size:10.5px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+.tag{background:var(--gold-d);color:var(--bg);font-size:9.5px;font-weight:700;padding:3px 10px;border-radius:20px;letter-spacing:.06em;text-transform:uppercase}
+
+/* ── KPI BAR ── */
+.kpis{background:var(--surf);border-bottom:1px solid var(--border);padding:6px 18px;display:flex;gap:4px;flex-wrap:wrap}
+.kpi{background:var(--surf2);border:1px solid var(--border);border-radius:var(--r);padding:6px 12px;flex:1;min-width:118px}
+.kpi.hi{border-color:var(--gold-d);background:linear-gradient(135deg,#12122A,#181830)}
+.kpi .kl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:2px}
+.kpi .kv{font-family:'DM Mono',monospace;font-size:14px;font-weight:500}
+.kpi-sub{font-family:'DM Mono',monospace;font-size:9px;color:var(--faint);margin-top:1px;letter-spacing:.02em}
+.kpi-sub:empty{display:none}
+
+/* ── LAYOUT ── */
+.shell{display:flex;height:calc(100vh - 100px);overflow:hidden}
+
+/* ── SIDEBAR ── */
+aside{
+  width:320px;min-width:220px;max-width:560px;
+  background:var(--surf);border-right:1px solid var(--border);
+  overflow-y:auto;overflow-x:hidden;flex-shrink:0;position:relative;
+}
+/* Drag handle */
+.resize-handle{
+  position:absolute;top:0;right:-4px;width:8px;height:100%;
+  cursor:col-resize;z-index:50;
+  background:transparent;
+  transition:background .15s;
+}
+.resize-handle:hover,.resize-handle.dragging{background:rgba(200,149,42,.35)}
+.resize-handle::after{
+  content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:2px;height:32px;border-radius:2px;
+  background:rgba(200,149,42,.3);
+  transition:background .15s;
+}
+.resize-handle:hover::after,.resize-handle.dragging::after{background:var(--gold)}
+
+.s-hdr{
+  padding:10px 16px;background:var(--surf2);border-bottom:1px solid var(--border);
+  font-family:'Playfair Display',serif;font-size:13px;color:var(--gold);
+  position:sticky;top:0;z-index:2;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.s-hdr-sub{font-size:9px;color:var(--faint);font-family:'Outfit',sans-serif;font-weight:400;letter-spacing:.04em}
+.s-sec{padding:12px 16px 8px;border-bottom:1px solid var(--border)}
+.s-lbl{font-size:9.5px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px}
+
+/* Assumption rows — label on top, input below for breathing room */
+.s-row{margin-bottom:10px}
+.s-row label{
+  display:block;font-size:11px;color:var(--muted);line-height:1.4;margin-bottom:4px;
+}
+.s-inp{
+  width:100%;
+  background:var(--inp);border:1px solid var(--inp-b);
+  color:var(--blue);font-family:'DM Mono',monospace;font-size:15px;font-weight:500;
+  padding:8px 12px;border-radius:var(--r);text-align:right;
+  outline:none;transition:border .15s,box-shadow .15s;
+  display:block;
+}
+.s-inp:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(200,149,42,.12)}
+.s-inp:hover:not(:focus){border-color:var(--faint)}
+
+.fee-box{
+  background:rgba(200,149,42,.05);border:1px solid rgba(200,149,42,.25);
+  border-radius:var(--r);padding:10px 12px;margin-bottom:10px;
+}
+.fee-box .ft{font-size:9.5px;font-weight:700;color:var(--gold-l);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}
+.fee-note{font-size:9.5px;color:var(--faint);line-height:1.55;margin-top:7px;padding:6px 8px;background:rgba(255,255,255,.02);border-radius:3px;border-left:2px solid var(--gold-d)}
+
+/* Cost table */
+.cost-tbl{width:100%;border-collapse:collapse}
+.cost-tbl th{font-size:9px;color:var(--faint);text-transform:uppercase;letter-spacing:.06em;padding:4px 6px;border-bottom:1px solid var(--border);text-align:right}
+.cost-tbl th:first-child{text-align:left}
+.cost-tbl td{padding:3px 6px;border-bottom:1px solid var(--border);font-size:11px;color:var(--muted);vertical-align:middle}
+.cost-tbl tr:last-child td{border-bottom:none}
+.cost-tbl input{
+  background:var(--inp);border:1px solid var(--inp-b);color:var(--blue);
+  font-family:'DM Mono',monospace;font-size:13px;font-weight:500;
+  padding:5px 8px;border-radius:3px;text-align:right;
+  outline:none;width:100%;transition:border .15s;
+}
+.cost-tbl input:focus{border-color:var(--gold);box-shadow:0 0 0 2px rgba(200,149,42,.1)}
+.cost-tbl input:hover:not(:focus){border-color:var(--faint)}
+
+/* Drawing facility */
+.draw-row{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;margin-bottom:6px}
+.draw-row .draw-lbl{font-size:11px;color:var(--muted)}
+.draw-inp{
+  background:var(--inp);border:1px solid var(--inp-b);color:var(--blue);
+  font-family:'DM Mono',monospace;font-size:13px;font-weight:500;
+  padding:6px 8px;border-radius:3px;text-align:right;
+  outline:none;transition:border .15s;
+}
+.draw-inp:focus{border-color:var(--gold);box-shadow:0 0 0 2px rgba(200,149,42,.1)}
+.draw-inp:hover:not(:focus){border-color:var(--faint)}
+.draw-inp.mo{width:52px}
+.draw-inp.amt{width:96px}
+
+/* ── MAIN ── */
+main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.tabs{display:flex;border-bottom:1px solid var(--border);background:var(--surf2);flex-shrink:0}
+.tab{padding:10px 18px;font-size:11px;font-weight:600;color:var(--muted);cursor:pointer;border:none;border-bottom:2px solid transparent;background:none;text-transform:uppercase;letter-spacing:.06em;transition:all .15s}
+.tab:hover{color:var(--text)}
+.tab.on{color:var(--gold);border-bottom-color:var(--gold)}
+.pane{flex:1;overflow:auto;padding:14px 18px}
+
+/* ── DEAL TABLE ── */
+.deal-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:12px;flex-wrap:wrap}
+.deal-bar h2{font-family:'Playfair Display',serif;font-size:15px;white-space:nowrap}
+.deal-legend{font-size:9.5px;color:var(--faint);line-height:1.6}
+.btn-add{background:rgba(61,184,122,.1);border:1px solid rgba(61,184,122,.3);color:var(--green);font-family:'Outfit',sans-serif;font-size:11px;font-weight:600;padding:6px 14px;border-radius:var(--r);cursor:pointer;letter-spacing:.04em;transition:all .15s;white-space:nowrap}
+.btn-add:hover{background:rgba(61,184,122,.2);border-color:var(--green)}
+.btn-bulk{background:var(--surf3);border:1px solid var(--border2);color:var(--muted);font-family:'Outfit',sans-serif;font-size:10px;font-weight:600;padding:5px 9px;border-radius:3px;cursor:pointer;letter-spacing:.03em;transition:all .15s;white-space:nowrap}
+.btn-bulk:hover{color:var(--text);border-color:var(--gold-d);background:rgba(200,149,42,.08)}
+.name-cell{display:flex;flex-direction:column;gap:0}
+.deal-code{font-family:'DM Mono',monospace;font-size:8.5px;color:var(--gold-d);letter-spacing:.06em;padding:2px 8px 0;line-height:1}
+tr.tbl-foot-100 td{font-weight:400!important;color:var(--faint)!important;background:var(--surf)!important}
+tr.tbl-foot-100 td:first-child{background:var(--surf)!important}
+
+/* Table wrapper — horizontal scroll */
+.tbl-wrap{overflow-x:auto;overflow-y:visible;border:1px solid var(--border);border-radius:var(--r)}
+table.dt{border-collapse:collapse;width:100%;min-width:980px;table-layout:fixed}
+
+/* Column widths */
+table.dt col.c-name{width:180px}
+table.dt col.c-src{width:80px}
+table.dt col.c-country{width:90px}
+table.dt col.c-pri{width:80px}
+table.dt col.c-orig{width:80px}
+table.dt col.c-notl{width:76px}
+table.dt col.c-cmo{width:52px}
+table.dt col.c-prob{width:120px}
+table.dt col.c-spl{width:60px}
+table.dt col.c-gfee{width:86px}
+table.dt col.c-osh{width:60px}
+table.dt col.c-psh{width:60px}
+table.dt col.c-orev{width:90px}
+table.dt col.c-prev{width:90px}
+table.dt col.c-trev{width:90px}
+
+table.dt col.c-sbps{width:54px}
+table.dt col.c-srev{width:86px}
+table.dt col.c-del{width:36px}
+
+/* Group headers */
+.gh{background:var(--surf3)}
+.gh th{font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;padding:5px 8px;text-align:center;color:var(--muted);border-bottom:1px solid var(--border2)}
+.gh th.g-deal{text-align:left;background:var(--surf3);color:var(--faint)}
+.gh th.g-fee{background:rgba(200,149,42,.06);color:var(--gold-l);border-bottom:2px solid rgba(200,149,42,.3)}
+.gh th.g-sh{background:rgba(91,142,232,.06);color:#8AB8FF;border-bottom:2px solid rgba(91,142,232,.3)}
+.gh th.g-rev{background:rgba(61,184,122,.06);color:var(--green);border-bottom:2px solid rgba(61,184,122,.3)}
+.gh th.g-strip{background:rgba(160,144,232,.06);color:var(--purple);border-bottom:2px solid rgba(160,144,232,.3)}
+
+/* Sub-headers */
+.sh2 th{font-size:9px;color:var(--faint);font-weight:600;padding:5px 8px;background:var(--surf2);border-bottom:2px solid var(--border2);text-align:center;white-space:nowrap;position:sticky;top:0;z-index:5}
+.sh2 th:first-child{text-align:left;position:sticky;left:0;z-index:6;background:var(--surf2)}
+
+/* DATA ROWS */
+table.dt td{padding:0;border-bottom:1px solid var(--border);vertical-align:middle}
+table.dt tr:last-child td{border-bottom:none}
+table.dt tr:hover td{background:rgba(255,255,255,.012)}
+
+/* Sticky first col */
+table.dt td:first-child{position:sticky;left:0;background:var(--surf);z-index:3}
+table.dt tr:hover td:first-child{background:#141428}
+
+/* Inputs inside cells */
+.cell-inp{width:100%;background:transparent;border:none;color:var(--blue);font-family:'DM Mono',monospace;font-size:11px;padding:7px 8px;text-align:right;outline:none;transition:background .1s}
+.cell-inp:focus{background:rgba(106,158,238,.08);border-radius:3px}
+.cell-inp.text-inp{text-align:left;color:var(--text)}
+.cell-inp.text-inp:focus{background:rgba(255,255,255,.04)}
+.cell-sel{width:100%;background:transparent;border:none;color:var(--blue);font-family:'Outfit',sans-serif;font-size:11px;padding:7px 6px;outline:none;cursor:pointer;-webkit-appearance:none;appearance:none}
+.cell-sel:focus{background:rgba(106,158,238,.06)}
+
+/* Calc cells */
+td.calc{font-family:'DM Mono',monospace;font-size:11px;text-align:right;padding:7px 8px;color:var(--muted);white-space:nowrap}
+td.calc.val-pos{color:var(--green)}
+td.calc.val-neg{color:var(--red)}
+td.calc.val-zero{color:var(--faint)}
+td.calc.val-gold{color:var(--gold-l)}
+
+/* Dimmed (Iroko origin — no orig fee) */
+td.dimmed{background:rgba(0,0,0,.15)!important}
+td.dimmed .cell-inp,td.dimmed .cell-sel{color:var(--faint)!important;pointer-events:none}
+
+/* Origin badge */
+.orig-badge{display:inline-block;font-size:9px;font-weight:700;padding:3px 7px;border-radius:3px;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+.ob-ag{background:rgba(61,184,122,.12);color:var(--green);border:1px solid rgba(61,184,122,.25)}
+.ob-iroko{background:rgba(200,149,42,.1);color:var(--gold-l);border:1px solid rgba(200,149,42,.2)}
+
+/* Strip toggle */
+.stog{width:30px;height:16px;appearance:none;border-radius:8px;background:var(--surf3);border:1px solid var(--border2);cursor:pointer;position:relative;transition:.2s;display:block;margin:0 auto}
+.stog:checked{background:var(--purple);border-color:#7060C0}
+.stog::after{content:'';position:absolute;width:10px;height:10px;background:var(--bg);border-radius:50%;top:2px;left:2px;transition:.2s}
+.stog:checked::after{transform:translateX(14px)}
+
+
+/* Drag handle column */
+table.dt col.c-drag{width:28px}
+table.dt col.c-active{width:42px}
+
+/* Drag handle cell */
+td.drag-handle{
+  cursor:grab;text-align:center;color:var(--faint);
+  font-size:14px;letter-spacing:1px;padding:0 4px;
+  user-select:none;transition:color .15s;
+}
+td.drag-handle:hover{color:var(--muted)}
+td.drag-handle:active{cursor:grabbing}
+
+/* Active toggle */
+.act-tog{
+  width:34px;height:18px;appearance:none;border-radius:9px;
+  background:var(--surf3);border:1px solid var(--border2);
+  cursor:pointer;position:relative;transition:.2s;display:block;margin:0 auto;
+}
+.act-tog:checked{background:var(--green);border-color:#2A8055}
+.act-tog::after{
+  content:'';position:absolute;width:12px;height:12px;
+  background:var(--bg);border-radius:50%;top:2px;left:2px;transition:.2s;
+}
+.act-tog:checked::after{transform:translateX(16px)}
+
+/* Inactive row */
+tr.deal-inactive td{opacity:.35;pointer-events:none}
+tr.deal-inactive td.drag-handle,
+tr.deal-inactive td:last-child{opacity:.35;pointer-events:all}
+tr.deal-inactive td.act-cell{opacity:1;pointer-events:all}
+
+/* Drag-over indicator */
+tr.drag-over-top td{border-top:2px solid var(--gold)!important}
+tr.drag-over-bot td{border-bottom:2px solid var(--gold)!important}
+tr.dragging-row{opacity:.4}
+
+/* Delete button */
+.del-btn{background:none;border:none;color:var(--faint);cursor:pointer;font-size:16px;padding:4px 8px;width:100%;display:block;line-height:1;transition:all .15s}
+.del-btn:hover{color:var(--red);background:rgba(224,80,80,.08)}background:var(--surf2)!important;border-top:2px solid var(--border2);font-family:'DM Mono',monospace;font-size:11.5px;font-weight:600;text-align:right;padding:8px 8px;white-space:nowrap}
+.tbl-foot td:first-child{text-align:right;font-size:9.5px;font-weight:400;color:var(--faint);font-family:'Outfit',sans-serif;position:sticky;left:0;background:var(--surf2)!important}
+
+/* ── P&L TABLE ── */
+table.pl{border-collapse:collapse;width:100%;min-width:960px}
+table.pl th{background:var(--surf3);color:var(--muted);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:7px 8px;text-align:right;border-bottom:1px solid var(--border2);white-space:nowrap;position:sticky;top:0;z-index:2}
+table.pl th:first-child{text-align:left;min-width:220px}
+table.pl th.yr{color:var(--gold);background:var(--surf2)}
+table.pl td{padding:5px 8px;border-bottom:1px solid var(--border);font-family:'DM Mono',monospace;font-size:11px;text-align:right;white-space:nowrap}
+table.pl td:first-child{text-align:left;font-family:'Outfit',sans-serif;font-size:11.5px;color:var(--muted)}
+table.pl td.yr{font-weight:600;background:rgba(200,149,42,.05)}
+table.pl tr.pl-hdr td{background:var(--surf3);color:var(--gold);font-family:'Outfit',sans-serif;font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;padding:7px 8px;border-top:2px solid var(--border2)}
+table.pl tr.pl-sub td{background:var(--surf2);border-top:1px solid var(--border2)}
+table.pl tr.pl-sub td:first-child{font-family:'Outfit',sans-serif;font-weight:700;color:var(--text);font-size:12px}
+table.pl tr.pl-ebitda td{background:rgba(91,142,232,.06);border-top:1px solid rgba(91,142,232,.2)}
+table.pl tr.pl-ebitda td:first-child{color:var(--blue);font-weight:700}
+table.pl tr.pl-cash td{background:rgba(200,149,42,.07);border-top:1px solid var(--gold-d)}
+table.pl tr.pl-cash td:first-child{color:var(--gold-l);font-weight:700}
+
+/* ── METRIC CARDS ── */
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:9px}
+.card{background:var(--surf2);border:1px solid var(--border);border-radius:var(--r);padding:11px 13px}
+.card.hi{border-color:var(--gold-d);background:linear-gradient(135deg,#111128,#18183A)}
+.card .cl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px}
+.card .cv{font-family:'DM Mono',monospace;font-size:16px;font-weight:500}
+.card .cs{font-size:9px;color:var(--faint);margin-top:2px}
+
+/* Colours */
+.pos{color:var(--green)} .neg{color:var(--red)} .dim{color:var(--faint)}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--faint)}
+
+/* ── CLOUD SYNC TOOLBAR ── */
+.cs-bar{display:flex;align-items:center;gap:6px;flex:1;justify-content:center;margin:0 16px}
+.cs-picker{background:var(--inp);border:1px solid var(--inp-b);color:var(--blue);font-family:'DM Mono',monospace;font-size:11px;padding:5px 9px;border-radius:var(--r);outline:none;max-width:220px;cursor:pointer;transition:border .15s}
+.cs-picker:hover,.cs-picker:focus{border-color:var(--gold)}
+.cs-btn{background:var(--surf2);border:1px solid var(--border);color:var(--muted);font-family:'Outfit',sans-serif;font-size:10px;font-weight:600;padding:5px 9px;border-radius:var(--r);cursor:pointer;transition:all .15s;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+.cs-btn:hover{color:var(--text);border-color:var(--gold-d);background:rgba(200,149,42,.08)}
+.cs-btn-del{padding:5px 7px;color:var(--faint)}
+.cs-btn-del:hover{color:var(--red);border-color:rgba(224,80,80,.3);background:rgba(224,80,80,.06)}
+.cs-status{font-size:10px;color:var(--muted);font-family:'Outfit',sans-serif;letter-spacing:.04em;white-space:nowrap;min-width:90px;padding-left:6px}
+.cs-status.cs-ok{color:var(--green)}
+.cs-status.cs-warn{color:var(--gold-l)}
+.cs-status.cs-err{color:var(--red)}
+.cs-status.cs-sync{color:var(--blue)}
+
+/* ── MOBILE ── */
+.asm-toggle{display:none !important}
+@media (max-width:720px){
+  body{overflow-x:hidden}
+  header{padding:0 12px;height:48px}
+  .brand-name{font-size:16px}
+  .brand-sub{display:none}
+  .tag{font-size:9px;padding:2px 7px;letter-spacing:.04em}
+
+  .cs-bar{gap:4px;margin:0 6px}
+  .cs-picker{font-size:10px;padding:4px 6px;max-width:110px}
+  .cs-btn{font-size:9px;padding:4px 6px;letter-spacing:.03em}
+  .cs-status{display:none}
+
+  .kpis{padding:5px 6px;gap:3px}
+  .kpi{flex:1 1 calc(50% - 3px);min-width:0;padding:5px 8px}
+  .kpi .kl{font-size:8.5px}
+  .kpi .kv{font-size:12px}
+
+  .shell{flex-direction:column;height:calc(100vh - 96px);overflow:hidden}
+  aside{
+    width:100%;min-width:0;max-width:none;
+    max-height:0;overflow:hidden;
+    border-right:none;border-bottom:1px solid var(--gold-d);
+    transition:max-height .28s ease;
+    flex:0 0 auto;
+  }
+  aside.open{max-height:55vh;overflow-y:auto}
+  .resize-handle{display:none}
+  .s-hdr-sub{display:none}
+
+  main{flex:1 1 auto;min-height:0}
+  .tabs{overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch}
+  .tab{padding:9px 11px;font-size:10.5px;flex-shrink:0;white-space:nowrap}
+  .asm-toggle{display:inline-block !important;color:var(--gold);border-bottom-color:transparent}
+  .asm-toggle.on{border-bottom-color:var(--gold);background:rgba(200,149,42,.06)}
+  .pane{padding:10px 8px}
+
+  /* Deal bar — compact */
+  .deal-bar{gap:6px;margin-bottom:8px}
+  .deal-bar h2{font-size:13px}
+  .deal-legend{font-size:8.5px;line-height:1.5}
+
+  /* Table — kill min-width, hide low-priority cols */
+  .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  table.dt{min-width:0;font-size:10.5px;table-layout:auto;width:100%}
+  table.dt thead tr.gh{display:none}
+
+  /* Hide cols: 4=country, 5=priority, 6=originated by, 12=orig sh %, 13=plc sh %, 18=split %, 19=consultant ZAR */
+  table.dt col:nth-child(4),
+  table.dt col:nth-child(5),
+  table.dt col:nth-child(6),
+  table.dt col:nth-child(12),
+  table.dt col:nth-child(13),
+  table.dt col:nth-child(18),
+  table.dt col:nth-child(19){display:none}
+  table.dt tr.sh2 th:nth-child(4),
+  table.dt tr.sh2 th:nth-child(5),
+  table.dt tr.sh2 th:nth-child(6),
+  table.dt tr.sh2 th:nth-child(12),
+  table.dt tr.sh2 th:nth-child(13),
+  table.dt tr.sh2 th:nth-child(18),
+  table.dt tr.sh2 th:nth-child(19){display:none}
+  table.dt tbody tr td:nth-child(4),
+  table.dt tbody tr td:nth-child(5),
+  table.dt tbody tr td:nth-child(6),
+  table.dt tbody tr td:nth-child(12),
+  table.dt tbody tr td:nth-child(13),
+  table.dt tbody tr td:nth-child(18),
+  table.dt tbody tr td:nth-child(19){display:none}
+  /* Tfoot has colspan=15 + 5 single cells; child(4)=split %, child(5)=consultant ZAR */
+  table.dt tfoot tr.tbl-foot td:nth-child(4),
+  table.dt tfoot tr.tbl-foot td:nth-child(5){display:none}
+
+  /* Tighten cells */
+  table.dt col.c-name{width:auto}
+  table.dt col.c-drag{width:18px}
+  table.dt col.c-active{width:34px}
+  td.drag-handle{font-size:11px;padding:0 2px}
+  .cell-inp,.cell-sel{font-size:11px;padding:6px 5px}
+  .sh2 th{padding:5px 4px;font-size:8.5px}
+
+  /* P&L — already scrollable, but compact */
+  table.pl{min-width:600px}
+  table.pl th{font-size:8.5px;padding:5px 5px}
+  table.pl td{font-size:10px;padding:4px 5px}
+  table.pl th:first-child{min-width:140px}
+
+  /* Metric cards */
+  .cards{grid-template-columns:repeat(2,1fr);gap:6px}
+  .card{padding:8px 10px}
+  .card .cv{font-size:13px}
+
+  /* Sidebar internal spacing */
+  .s-sec{padding:10px 12px 6px}
+  .cost-tbl th,.cost-tbl td{padding:3px 4px;font-size:10px}
+  .draw-inp.mo{width:44px}
+  .draw-inp.amt{width:80px}
+}
+@media (max-width:420px){
+  .kpi{flex:1 1 calc(33.33% - 3px)}
+  .deal-legend{display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="brand">
+    <span class="brand-name">Resgro Capital</span>
+    <span class="brand-sub">Asset Origination &amp; Structuring — P1</span>
+  </div>
+  <div class="cs-bar">
+    <select id="cs-version-picker" class="cs-picker" onchange="CSwitch(this.value)" title="Switch version"></select>
+    <button class="cs-btn" onclick="CSaveAs()" title="Save current state as a new named version">+ Version</button>
+    <button class="cs-btn" onclick="CSetDefault()" title="Set the active version as the team default">★ Default</button>
+    <button class="cs-btn cs-btn-del" onclick="CDelete()" title="Delete the active version">🗑</button>
+    <span id="cs-status" class="cs-status">…</span>
+  </div>
+  <span class="tag">P1 Model</span>
+</header>
+
+<!-- KPI BAR -->
+<div class="kpis">
+  <div class="kpi hi"><div class="kl">Gross Fee Pool</div><div class="kv" id="k-gfee">—</div><div class="kpi-sub" id="k-gfee-100"></div></div>
+  <div class="kpi hi"><div class="kl">Orig Revenue</div><div class="kv pos" id="k-orig">—</div><div class="kpi-sub" id="k-orig-100"></div></div>
+  <div class="kpi hi"><div class="kl">Placement Revenue</div><div class="kv pos" id="k-place">—</div><div class="kpi-sub" id="k-place-100"></div></div>
+  <div class="kpi"><div class="kl">Kela Share</div><div class="kv neg" id="k-kela">—</div></div>
+  <div class="kpi hi"><div class="kl">Net Revenue</div><div class="kv" id="k-net">—</div><div class="kpi-sub" id="k-net-100"></div></div>
+  <div class="kpi hi"><div class="kl">EBITDA</div><div class="kv" id="k-ebitda">—</div><div class="kpi-sub" id="k-ebitda-100"></div></div>
+  <div class="kpi"><div class="kl">Cash Breakeven</div><div class="kv" id="k-break">—</div></div>
+</div>
+
+<div class="shell">
+
+<!-- SIDEBAR -->
+<aside id="sidebar">
+  <div class="resize-handle" id="resizeHandle"></div>
+
+  <div class="s-hdr">
+    <span>⚙ Assumptions</span>
+    <span class="s-hdr-sub">drag edge to resize</span>
+  </div>
+
+  <div class="s-sec">
+    <div class="s-lbl">FX</div>
+    <div class="s-row">
+      <label>USD / ZAR rate</label>
+      <input class="s-inp" id="a-fx" type="number" value="19" step="0.5" min="1">
+    </div>
+  </div>
+
+  <div class="s-sec">
+    <div class="s-lbl">Revenue</div>
+    <div class="fee-box">
+      <div class="ft">Gross Deal Fee</div>
+      <div class="s-row">
+        <label>Fee rate (bps of full notional)</label>
+        <input class="s-inp" id="a-gfee" type="number" value="75" step="5" min="0">
+      </div>
+      <div class="fee-note">One rate applied to the full deal notional. Resgro's share is then split into origination and placement components below.</div>
+    </div>
+    <div class="s-row">
+      <label>Resgro origination share<br><span style="font-size:9.5px;color:var(--faint)">% of gross fee — Resgro-originated deals only</span></label>
+      <input class="s-inp" id="a-osh" type="number" value="40" step="5" min="0" max="100">
+    </div>
+    <div class="s-row">
+      <label>Resgro placement share<br><span style="font-size:9.5px;color:var(--faint)">% of gross fee × share placed — all deals</span></label>
+      <input class="s-inp" id="a-psh" type="number" value="40" step="5" min="0" max="100">
+    </div>
+    <div class="s-row">
+      <label>Kela share — upfront fees (%)</label>
+      <input class="s-inp" id="a-kela" type="number" value="10" step="1" min="0" max="100">
+    </div>
+  </div>
+
+  <div class="s-sec">
+    <div class="s-lbl">Operating Costs</div>
+    <table class="cost-tbl">
+      <thead>
+        <tr>
+          <th style="text-align:left">Cost Line</th>
+          <th>ZAR p.a.</th>
+          <th>Start Mo</th>
+        </tr>
+      </thead>
+      <tbody id="costBody"></tbody>
+    </table>
+  </div>
+
+  <div class="s-sec">
+    <div class="s-lbl">Shareholder Loans (ZAR)</div>
+    <div style="display:grid;grid-template-columns:1fr 52px 96px;gap:8px;padding-bottom:5px">
+      <div style="font-size:9px;color:var(--faint);text-transform:uppercase;letter-spacing:.06em">Source</div>
+      <div style="font-size:9px;color:var(--faint);text-transform:uppercase;letter-spacing:.06em;text-align:right">Month</div>
+      <div style="font-size:9px;color:var(--faint);text-transform:uppercase;letter-spacing:.06em;text-align:right">Amount</div>
+    </div>
+    <div id="drawCont"></div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main>
+  <div class="tabs">
+    <button class="tab asm-toggle" onclick="toggleAsm(this)">⚙ Assumptions</button>
+    <button class="tab on" onclick="showTab('deals',this)">Deal Register</button>
+    <button class="tab" onclick="showTab('pl',this)">Monthly P&L</button>
+    <button class="tab" onclick="showTab('metrics',this)">Key Metrics</button>
+  </div>
+
+  <!-- DEAL REGISTER -->
+  <div class="pane" id="pane-deals">
+    <div class="deal-bar">
+      <div>
+        <h2>Deal Register</h2>
+        <div class="deal-legend" style="margin-top:3px">
+          <span class="orig-badge ob-ag">RC</span> Resgro originated — earns origination + placement revenue &nbsp;|&nbsp;
+          <span class="orig-badge ob-iroko">Iroko</span> Iroko originated — earns placement revenue only &nbsp;|&nbsp;
+          Shares overridable per deal
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
+        <div style="display:flex;align-items:center;gap:6px;background:var(--surf2);border:1px solid var(--border);border-radius:var(--r);padding:4px 10px">
+          <span style="font-size:9px;color:var(--faint);text-transform:uppercase;letter-spacing:.07em;white-space:nowrap">Text size</span>
+          <button onclick="changeFontSize(-1)" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;padding:0 4px;transition:color .15s" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--muted)'">−</button>
+          <span id="fontSizeLabel" style="font-family:'DM Mono',monospace;font-size:12px;color:var(--blue);min-width:28px;text-align:center">12px</span>
+          <button onclick="changeFontSize(1)"  style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;padding:0 4px;transition:color .15s" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--muted)'">+</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:4px;background:var(--surf2);border:1px solid var(--border);border-radius:var(--r);padding:4px 6px">
+          <span style="font-size:9px;color:var(--faint);text-transform:uppercase;letter-spacing:.07em;white-space:nowrap;padding-right:2px">Toggle</span>
+          <button class="btn-bulk" onclick="bulkToggle('on')" title="Turn all deals on">All on</button>
+          <button class="btn-bulk" onclick="bulkToggle('off')" title="Turn all deals off">All off</button>
+          <button class="btn-bulk" onclick="bulkToggle('invert')" title="Invert every deal's on/off state">Invert</button>
+        </div>
+        <button class="btn-add" onclick="addDeal()">+ Add Deal</button>
+      </div>
+    </div>
+
+    <div class="tbl-wrap">
+      <table class="dt" id="dealTbl">
+        <colgroup>
+          <col class="c-drag"><col class="c-active">
+          <col class="c-name"><col class="c-country">
+          <col class="c-pri"><col class="c-orig">
+          <col class="c-notl"><col class="c-cmo"><col class="c-prob"><col class="c-spl">
+          <col class="c-gfee"><col class="c-osh"><col class="c-psh">
+          <col class="c-orev"><col class="c-prev"><col class="c-trev">
+          <col style="width:90px"><col style="width:60px"><col style="width:90px">
+          <col class="c-del">
+        </colgroup>
+        <thead>
+          <tr class="gh">
+            <th class="g-deal" colspan="6">Deal Details</th>
+            <th class="g-deal" colspan="4">Economics</th>
+            <th class="g-fee">Gross Fee</th>
+            <th class="g-sh" colspan="2">RC Shares</th>
+            <th class="g-rev" colspan="3">Expected Revenue (USD, prob-weighted)</th>
+            <th class="g-rev" style="border-bottom:2px solid rgba(200,149,42,.3);background:rgba(200,149,42,.04);color:var(--gold-l)">Total (ZAR)</th>
+            <th style="background:rgba(160,144,232,.06);color:var(--purple);border-bottom:2px solid rgba(160,144,232,.3)" colspan="2">Consultant Split</th>
+            <th class="g-deal"></th>
+          </tr>
+          <tr class="sh2">
+            <th title="Drag to reorder">⠿</th>
+            <th title="Toggle deal on/off">On</th>
+            <th style="text-align:left">Deal / Counterparty</th>
+            <th>Country</th>
+            <th>Priority</th>
+            <th>Originated by</th>
+            <th>Notional<br>USD m</th>
+            <th>Close<br>Mo</th>
+            <th>Milestone</th>
+            <th>Placed<br>%</th>
+            <th style="color:var(--gold-l)">Gross<br>Fee</th>
+            <th style="color:#8AB8FF">Orig<br>Sh %</th>
+            <th style="color:#8AB8FF">Plc<br>Sh %</th>
+            <th style="color:var(--green)">Orig<br>Rev</th>
+            <th style="color:var(--green)">Plc<br>Rev</th>
+            <th style="color:var(--green)">Total USD</th>
+            <th style="color:var(--gold-l)">Total ZAR</th>
+            <th style="color:var(--purple)">Split %</th>
+            <th style="color:var(--purple)">Consultant ZAR</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="dealBody"></tbody>
+        <tfoot>
+          <tr class="tbl-foot">
+            <td colspan="15" style="text-align:right;font-size:9.5px;color:var(--faint);font-family:'Outfit',sans-serif">TOTAL EXPECTED (prob-weighted)</td>
+            <td id="f-total" class="pos">—</td>
+            <td id="f-total-r" class="pos">—</td>
+            <td></td>
+            <td id="f-cs-r" style="color:var(--purple)">—</td>
+            <td></td>
+          </tr>
+          <tr class="tbl-foot tbl-foot-100">
+            <td colspan="15" style="text-align:right;font-size:9.5px;color:var(--faint);font-family:'Outfit',sans-serif">TOTAL @ 100% (all close)</td>
+            <td id="f-total-100">—</td>
+            <td id="f-total-r-100">—</td>
+            <td></td>
+            <td></td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+
+  <!-- P&L -->
+  <div class="pane" id="pane-pl" style="display:none">
+    <div style="overflow-x:auto"><table class="pl"><thead><tr id="plHead"></tr></thead><tbody id="plBody"></tbody></table></div>
+  </div>
+
+  <!-- METRICS -->
+  <div class="pane" id="pane-metrics" style="display:none">
+    <div class="cards" id="cardGrid"></div>
+  </div>
+</main>
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+// DEAL STORE
+// ══════════════════════════════════════════════
+let deals=[
+  // origBy: "RC" = Resgro originated | "Iroko" = Iroko originated
+  {id:1,  active:true, name:"Ecobank Nigeria — Capital Release TRS",           country:"Nigeria",       pri:"Critical", origBy:"RC",    notl:400,   cmo:9,  prob:70, spl:25, osh:null, psh:null, csp:0},
+  {id:2,  active:true, name:"Oragroup S.A — Additional Tier 1 Capital",        country:"Côte d'Ivoire", pri:"Urgent",   origBy:"Iroko", notl:200,   cmo:10, prob:50, spl:35, osh:null, psh:null, csp:0},
+  {id:3,  active:true, name:"BGFI CI — Road Network (EUR 461m)",                country:"Côte d'Ivoire", pri:"Moderate", origBy:"Iroko", notl:506,   cmo:12, prob:30, spl:20, osh:null, psh:null, csp:0},
+  {id:4,  active:true, name:"BGFI Benin — Road Network (EUR 915m)",             country:"Benin",         pri:"Moderate", origBy:"Iroko", notl:1005,  cmo:12, prob:25, spl:15, osh:null, psh:null, csp:0},
+  {id:5,  active:true, name:"EBID — ECOWAS Development Finance",               country:"ECOWAS",        pri:"Mod-High", origBy:"Iroko", notl:500,   cmo:11, prob:35, spl:25, osh:null, psh:null, csp:0},
+  {id:6,  active:true, name:"Orabank CI — Capital Release TRS (EUR 50m)",      country:"Côte d'Ivoire", pri:"Mod-High", origBy:"Iroko", notl:55,    cmo:10, prob:45, spl:35, osh:null, psh:null, csp:0},
+  {id:7,  active:true, name:"LEDing Ghana — UCC Hostel Finance",               country:"Ghana",         pri:"Moderate", origBy:"Iroko", notl:64.2,  cmo:11, prob:45, spl:40, osh:null, psh:null, csp:0},
+  {id:8,  active:true, name:"R&H Hospital — Healthcare Project Ghana",         country:"Ghana",         pri:"Moderate", origBy:"Iroko", notl:58.67, cmo:11, prob:40, spl:40, osh:null, psh:null, csp:0},
+  {id:9,  active:true, name:"BGFI CI — Balance Sheet Enhancement (EUR 30m)",   country:"Côte d'Ivoire", pri:"Mod-High", origBy:"Iroko", notl:35.94, cmo:9,  prob:55, spl:50, osh:null, psh:null, csp:0},
+  {id:10, active:true, name:"BGFI CI — Commodity Trade TRS (EUR 70m)",         country:"Côte d'Ivoire", pri:"Mod-High", origBy:"Iroko", notl:82.46, cmo:10, prob:50, spl:45, osh:null, psh:null, csp:0},
+  {id:11, active:true, name:"First HoldCo — Aiteo SOL Relief",                 country:"Nigeria",       pri:"Urgent",   origBy:"Iroko", notl:75,    cmo:10, prob:55, spl:40, osh:null, psh:null, csp:0},
+  {id:12, active:true, name:"Access Holdings — BSO / RWA Optimisation",        country:"Nigeria",       pri:"Urgent",   origBy:"Iroko", notl:60,    cmo:11, prob:50, spl:35, osh:null, psh:null, csp:0},
+  {id:13, active:true, name:"UBA — RWA Relief",                                country:"Nigeria",       pri:"Mod-High", origBy:"Iroko", notl:40,    cmo:12, prob:40, spl:30, osh:null, psh:null, csp:0},
+  {id:14, active:true, name:"Zenith Bank — O&G Forbearance SOL",               country:"Nigeria",       pri:"Moderate", origBy:"Iroko", notl:50,    cmo:12, prob:35, spl:30, osh:null, psh:null, csp:0},
+  {id:15, active:true, name:"Libfin — Structured Credit",                      country:"Nigeria",       pri:"Moderate", origBy:"RC",    notl:30,    cmo:11, prob:45, spl:60, osh:null, psh:null, csp:0},
+];
+let nextId=16;
+
+const COSTS=[
+  {l:"Partner salaries",             a:0,       sm:1},
+  {l:"Executive assistant",        a:500000,  sm:1},
+  {l:"PI insurance",               a:120000,  sm:3},
+  {l:"Travel & entertainment",     a:300000,  sm:1},
+  {l:"Legal fees",                 a:200000,  sm:1},
+  {l:"Accounting & tax",           a:90000,   sm:1},
+  {l:"Company secretarial",        a:40000,   sm:1},
+  {l:"Regulatory / FSCA",          a:80000,   sm:9},
+  {l:"Technology / CRM",           a:60000,   sm:3},
+  {l:"Marketing & credentials",    a:60000,   sm:3},
+  {l:"Banking fees",               a:24000,   sm:1},
+  {l:"Contingency",                a:60000,   sm:1},
+];
+const DRAWS=[{l:"Shareholder loan",mo:1,amt:100000}];
+
+// ══════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════
+const N=v=>isFinite(+v)?+v:0;
+
+function fR(v,compact=false){
+  if(!isFinite(v))return'—';
+  if(compact){
+    const a=Math.abs(v);
+    const s=a>=1e9?'R'+(a/1e9).toFixed(2)+'bn':a>=1e6?'R'+(a/1e6).toFixed(1)+'m':a>=1e3?'R'+(a/1e3).toFixed(0)+'k':'R'+a.toFixed(0);
+    return v<0?'('+s+')':s;
+  }
+  const s=Math.abs(v).toLocaleString('en-ZA',{maximumFractionDigits:0});
+  return v<0?'(R'+s+')':'R'+s;
+}
+function fRm(v){
+  if(!isFinite(v)||v===0)return`<span class="dim">—</span>`;
+  const a=Math.abs(v);
+  const s=a>=1e9?'R'+(a/1e9).toFixed(2)+'bn':a>=1e6?'R'+(a/1e6).toFixed(1)+'m':a>=1e3?'R'+(a/1e3).toFixed(0)+'k':'R'+a.toFixed(0);
+  return`<span class="${v<0?'neg':'pos'}">${v<0?'('+s+')':s}</span>`;
+}
+function fUm(v){
+  if(!isFinite(v)||v===0)return`<span class="dim">—</span>`;
+  const a=Math.abs(v);
+  const s=a>=1e9?'$'+(a/1e9).toFixed(2)+'bn':a>=1e6?'$'+(a/1e6).toFixed(2)+'m':a>=1e3?'$'+(a/1e3).toFixed(0)+'k':'$'+a.toFixed(0);
+  return`<span class="${v<0?'neg':'pos'}">${v<0?'('+s+')':s}</span>`;
+}
+
+function ga(){
+  return{
+    fx:   N(document.getElementById('a-fx').value)||19,
+    gfee: N(document.getElementById('a-gfee').value)/10000,
+    osh:  N(document.getElementById('a-osh').value)/100,
+    psh:  N(document.getElementById('a-psh').value)/100,
+    kela: N(document.getElementById('a-kela').value)/100,
+    costs:[...document.querySelectorAll('#costBody tr')].map(tr=>{
+      const i=tr.querySelectorAll('input');
+      return{l:tr.dataset.l,a:N(i[0].value),sm:N(i[1].value)||1};
+    }),
+    draws:[...document.querySelectorAll('#drawCont .drow')].map(r=>{
+      const i=r.querySelectorAll('input');
+      return{mo:N(i[0].value),amt:N(i[1].value)};
+    }),
+  };
+}
+
+// ══════════════════════════════════════════════
+// CALC
+// ══════════════════════════════════════════════
+function calcDeal(d,a){
+  const grossFee=d.notl*1e6*a.gfee;
+  const osh=d.osh!=null?d.osh/100:a.osh;
+  const psh=d.psh!=null?d.psh/100:a.psh;
+  const prob=d.prob/100, spl=d.spl/100;
+  const origRev100=d.origBy==='RC' ? grossFee*osh : 0;
+  const placeRev100=grossFee*spl*psh;
+  const origRev=origRev100*prob;
+  const placeRev=placeRev100*prob;
+  return{grossFee,origRev,placeRev,origRev100,placeRev100};
+}
+
+function calcPL(a){
+  let cum=0;
+  return Array.from({length:12},(_,mi)=>{
+    const mo=mi+1;
+    let origR=0,placeR=0;
+    for(const d of deals){
+      if(!d.active) continue;
+      const{origRev,placeRev}=calcDeal(d,a);
+      if(d.cmo===mo){origR+=origRev*a.fx; placeR+=placeRev*a.fx;}
+    }
+    const gross=origR+placeR, kela=-(origR+placeR)*a.kela, net=gross+kela;
+    let tc=0;
+    const cl=a.costs.map(c=>{const v=mo>=c.sm?-c.a/12:0;tc+=v;return v;});
+    let draw=0; for(const dr of a.draws){if(dr.mo===mo)draw+=dr.amt;}
+    const ebitda=net+tc, nc=ebitda+draw; cum+=nc;
+    return{mo,origR,placeR,gross,kela,net,cl,tc,draw,ebitda,nc,cum};
+  });
+}
+
+// ══════════════════════════════════════════════
+// RENDER SIDEBAR
+// ══════════════════════════════════════════════
+function renderSidebar(){
+  document.getElementById('costBody').innerHTML=COSTS.map(c=>`
+    <tr data-l="${c.l}">
+      <td>${c.l}</td>
+      <td><input type="number" value="${c.a}" min="0" step="10000" style="width:100%"></td>
+      <td><input type="number" value="${c.sm}" min="1" max="12" style="width:100%"></td>
+    </tr>`).join('');
+  document.getElementById('costBody').querySelectorAll('input').forEach(i=>i.addEventListener('input',compute));
+
+  document.getElementById('drawCont').innerHTML=DRAWS.map(d=>`
+    <div class="drow draw-row">
+      <div class="draw-lbl">${d.l}</div>
+      <input class="draw-inp mo" type="number" value="${d.mo}" min="1" max="12">
+      <input class="draw-inp amt" type="number" value="${d.amt}" min="0" step="50000">
+    </div>`).join('');
+  document.getElementById('drawCont').querySelectorAll('input').forEach(i=>i.addEventListener('input',compute));
+}
+
+// ══════════════════════════════════════════════
+// BUILD DEAL ROW
+// ══════════════════════════════════════════════
+const PRI_LIST=['Critical','Urgent','Mod-High','Moderate',''];
+
+function buildRow(d,a){
+  const tr=document.createElement('tr');
+  tr.dataset.id=d.id;
+  const isAG=d.origBy==='RC';
+
+  const priOpts=PRI_LIST.map(p=>`<option value="${p}"${d.pri===p?' selected':''}>${p||'—'}</option>`).join('');
+
+  const oshVal=d.osh!=null?d.osh:'';
+  const pshVal=d.psh!=null?d.psh:'';
+  const oshPh=(a.osh*100).toFixed(0);
+  const pshPh=(a.psh*100).toFixed(0);
+  const cspVal=d.csp!=null?d.csp:0;
+  const codeLabel=d.code||'';
+  const msOpts=MILESTONES.map(m=>`<option value="${m.k}"${d.milestone===m.k?' selected':''}>${m.l} ${m.p}%</option>`).join('')
+    +(d.milestone==='custom'||!MILESTONES.some(m=>m.k===d.milestone)?`<option value="custom"${d.milestone==='custom'?' selected':''}>Custom ${d.prob}%</option>`:'');
+
+  tr.innerHTML=`
+    <td class="drag-handle" draggable="false">⠿</td>
+    <td class="act-cell" style="text-align:center;vertical-align:middle;padding:4px">
+      <input class="act-tog t-active" type="checkbox"${d.active?' checked':''} title="Include in model">
+    </td>
+    <td><div class="name-cell"><span class="deal-code">${codeLabel}</span><input class="cell-inp text-inp t-name" type="text" value="${d.name.replace(/"/g,'&quot;')}"></div></td>
+    <td><input class="cell-inp text-inp t-country" type="text" value="${d.country||''}"></td>
+    <td><select class="cell-sel t-pri">${priOpts}</select></td>
+    <td>
+      <select class="cell-sel t-origby">
+        <option value="Iroko"${d.origBy==='Iroko'?' selected':''}>Iroko</option>
+        <option value="RC"${d.origBy==='RC'?' selected':''}>RC</option>
+      </select>
+    </td>
+    <td><input class="cell-inp t-notl" type="number" value="${d.notl}" min="0" step="25" placeholder="0"></td>
+    <td><input class="cell-inp t-cmo"  type="number" value="${d.cmo}"  min="0" max="12" placeholder="0"></td>
+    <td><select class="cell-sel t-prob" title="Execution milestone — sets probability">${msOpts}</select></td>
+    <td><input class="cell-inp t-spl"  type="number" value="${d.spl}"  min="0" max="100" placeholder="30"></td>
+    <td class="calc val-gold" id="gf-${d.id}">—</td>
+    <td class="${isAG?'':'dimmed'}" id="osh-cell-${d.id}"><input class="cell-inp t-osh" type="number" value="${oshVal}" min="0" max="100" step="5" placeholder="${oshPh}" ${isAG?'':'tabindex="-1"'}></td>
+    <td><input class="cell-inp t-psh" type="number" value="${pshVal}" min="0" max="100" step="5" placeholder="${pshPh}"></td>
+    <td class="calc" id="or-${d.id}">—</td>
+    <td class="calc" id="pr-${d.id}">—</td>
+    <td class="calc" id="tu-${d.id}">—</td>
+    <td class="calc" id="tz-${d.id}" style="color:var(--gold-l)">—</td>
+    <td><input class="cell-inp t-csp" type="number" value="${cspVal}" min="0" max="100" step="5" placeholder="0" style="color:var(--purple)"></td>
+    <td class="calc" id="cs-${d.id}" style="color:var(--purple)">—</td>
+    <td><button class="del-btn" onclick="removeDeal(${d.id})">×</button></td>`;
+
+  tr.querySelectorAll('input,select').forEach(el=>{
+    el.addEventListener('input',()=>{ syncRow(tr,d); compute(); });
+    el.addEventListener('change',()=>{ syncRow(tr,d); compute(); });
+  });
+  return tr;
+}
+
+function syncRow(tr,d){
+  d.active  = tr.querySelector('.t-active').checked;
+  d.name    = tr.querySelector('.t-name').value;
+  d.country = tr.querySelector('.t-country').value;
+  d.pri     = tr.querySelector('.t-pri').value;
+  d.origBy  = tr.querySelector('.t-origby').value;
+  d.notl    = N(tr.querySelector('.t-notl').value);
+  d.cmo     = N(tr.querySelector('.t-cmo').value);
+  const ms  = tr.querySelector('.t-prob').value;
+  d.milestone = ms;
+  const mObj = MILESTONES.find(m=>m.k===ms);
+  if(mObj) d.prob = mObj.p;   // milestone sets prob; 'custom' keeps existing prob
+  d.spl     = N(tr.querySelector('.t-spl').value);
+  d.csp     = N(tr.querySelector('.t-csp').value);
+  const ov=parseFloat(tr.querySelector('.t-osh').value);
+  const pv=parseFloat(tr.querySelector('.t-psh').value);
+  d.osh=isNaN(ov)?null:ov;
+  d.psh=isNaN(pv)?null:pv;
+
+  // Update orig share cell dim state
+  const oshCell=tr.querySelector(`#osh-cell-${d.id}`)||tr.cells[11];
+  const oshInp=tr.querySelector('.t-osh');
+  if(d.origBy==='RC'){
+    oshCell.classList.remove('dimmed');
+    oshInp.removeAttribute('tabindex');
+  } else {
+    oshCell.classList.add('dimmed');
+    oshInp.setAttribute('tabindex','-1');
+  }
+  tr.classList.toggle('deal-inactive', !d.active);
+}
+
+// ══════════════════════════════════════════════
+// RENDER DEAL TABLE
+// ══════════════════════════════════════════════
+function renderDealTable(a){
+  normalizeDeals();
+  const tbody=document.getElementById('dealBody');
+  tbody.innerHTML='';
+  deals.forEach(d=>{
+    const row=buildRow(d,a);
+    if(tblFontSize!==12) row.style.fontSize=tblFontSize+'px';
+    tbody.appendChild(row);
+  });
+}
+
+function addDeal(){
+  const d={id:nextId++, code:nextDealCode(), active:true, name:"New Deal", country:"", pri:"", origBy:"Iroko",
+           notl:0, cmo:0, prob:10, milestone:'engaged', spl:30, osh:null, psh:null, csp:0};
+  deals.push(d);
+  const a=ga();
+  const row=buildRow(d,a);
+  document.getElementById('dealBody').appendChild(row);
+  if(tblFontSize!==12) changeFontSize(0); // reapply current size to all rows
+  compute();
+  row.scrollIntoView({behavior:'smooth',block:'nearest'});
+  row.querySelector('.t-name').focus();
+  row.querySelector('.t-name').select();
+}
+
+function removeDeal(id){
+  deals=deals.filter(d=>d.id!==id);
+  const tr=document.querySelector(`tr[data-id="${id}"]`);
+  if(tr)tr.remove();
+  compute();
+}
+
+// ══════════════════════════════════════════════
+// BULK ON/OFF
+// ══════════════════════════════════════════════
+function bulkToggle(mode){
+  deals.forEach(d=>{
+    if(mode==='on') d.active=true;
+    else if(mode==='off') d.active=false;
+    else if(mode==='invert') d.active=!d.active;
+  });
+  document.querySelectorAll('#dealBody tr').forEach(tr=>{
+    const d=deals.find(x=>x.id===+tr.dataset.id);
+    if(!d) return;
+    const cb=tr.querySelector('.t-active');
+    if(cb) cb.checked=d.active;
+    tr.classList.toggle('deal-inactive', !d.active);
+  });
+  compute();
+}
+
+// ══════════════════════════════════════════════
+// DEAL CODES (RC-NNN) & MILESTONES
+// ══════════════════════════════════════════════
+const MILESTONES=[
+  {k:'engaged',  l:'Engaged',  full:'Client engaged',  p:10},
+  {k:'eoi',      l:'EOI',      full:'EOI received',     p:20},
+  {k:'assessing',l:'Assessing',full:'Credit assessing', p:60},
+  {k:'approved', l:'Approved', full:'Credit approved',  p:100},
+];
+function milestoneForProb(p){
+  const m=MILESTONES.find(x=>x.p===p);
+  return m?m.k:'custom';
+}
+function nextDealCode(){
+  let max=0;
+  deals.forEach(d=>{
+    const m=/^RC-(\d+)$/.exec(d.code||'');
+    if(m) max=Math.max(max,parseInt(m[1],10));
+  });
+  return 'RC-'+String(max+1).padStart(3,'0');
+}
+// Backfill codes + milestones on any deal that lacks them (e.g. legacy cloud state).
+function normalizeDeals(){
+  deals.forEach(d=>{
+    if(!d.code) d.code=nextDealCode();
+    if(!d.milestone) d.milestone=milestoneForProb(d.prob);
+  });
+}
+
+// ══════════════════════════════════════════════
+// UPDATE CALC CELLS
+// ══════════════════════════════════════════════
+function updateCells(a){
+  let totUp=0, totGross=0, totUp100=0;
+  deals.forEach(d=>{
+    const{grossFee,origRev,placeRev,origRev100,placeRev100}=calcDeal(d,a);
+    const show=d.notl>0 && d.active;
+    if(d.active){
+      totGross+=grossFee*(d.prob/100);
+      totUp+=origRev+placeRev;
+      totUp100+=origRev100+placeRev100;
+    }
+
+    const gf=document.getElementById('gf-'+d.id);
+    const or=document.getElementById('or-'+d.id);
+    const pr=document.getElementById('pr-'+d.id);
+    const tv=document.getElementById('tr-'+d.id);
+    const sr=document.getElementById('sr-'+d.id);
+
+    if(gf) gf.innerHTML=show?fUm(grossFee*(d.prob/100)):'<span class="dim">—</span>';
+
+    if(or){
+      if(d.origBy==='RC' && d.active){
+        or.innerHTML=show?fUm(origRev):'<span class="dim">—</span>';
+        or.className='calc '+(origRev>0?'val-pos':'val-zero');
+      } else {
+        or.innerHTML='<span class="dim">n/a</span>';
+        or.className='calc val-zero';
+      }
+    }
+    const totalUSD=origRev+placeRev;
+    const totalZAR=totalUSD*a.fx;
+    const consultZAR=totalZAR*(d.csp/100);
+    if(pr){ pr.innerHTML=show?fUm(placeRev):'<span class="dim">—</span>'; pr.className='calc '+(placeRev>0&&d.active?'val-pos':'val-zero'); }
+    const tu=document.getElementById('tu-'+d.id);
+    const tz=document.getElementById('tz-'+d.id);
+    const cs=document.getElementById('cs-'+d.id);
+    if(tu){ tu.innerHTML=show?fUm(totalUSD):'<span class="dim">—</span>'; tu.className='calc '+(totalUSD>0&&d.active?'val-pos':'val-zero'); }
+    if(tz){ tz.innerHTML=show?fRm(totalZAR):'<span class="dim">—</span>'; tz.className='calc '+(totalZAR>0&&d.active?'val-pos':'val-zero'); }
+    if(cs){ cs.innerHTML=consultZAR>0&&d.active?fRm(consultZAR):'<span class="dim">—</span>'; cs.className='calc '+(consultZAR>0&&d.active?'val-pos':'val-zero'); }
+
+    const tr=document.querySelector(`tr[data-id="${d.id}"]`);
+    if(tr) tr.classList.toggle('deal-inactive', !d.active);
+  });
+
+  const fx=a.fx;
+  document.getElementById('f-total').innerHTML=totUp>0?fUm(totUp):'<span class="dim">—</span>';
+  document.getElementById('f-total-r').innerHTML=fRm(totUp*fx);
+  const ft100=document.getElementById('f-total-100');
+  const ftr100=document.getElementById('f-total-r-100');
+  if(ft100) ft100.innerHTML=totUp100>0?fUm(totUp100):'<span class="dim">—</span>';
+  if(ftr100) ftr100.innerHTML=totUp100>0?fRm(totUp100*fx):'<span class="dim">—</span>';
+  const totCS=deals.filter(d=>d.active).reduce((s,d)=>{
+    const{origRev,placeRev}=calcDeal(d,a);
+    return s+(origRev+placeRev)*a.fx*(d.csp/100);
+  },0);
+  document.getElementById('f-cs-r').innerHTML=totCS>0?fRm(totCS):'<span class="dim">—</span>';
+}
+
+// ══════════════════════════════════════════════
+// P&L
+// ══════════════════════════════════════════════
+function renderPL(pl,a){
+  document.getElementById('plHead').innerHTML=
+    '<th></th>'+pl.map(m=>`<th>M${m.mo}</th>`).join('')+'<th class="yr">Full Year</th>';
+  function row(cls,lbl,vals,yrV){
+    const yr=yrV!==undefined?yrV:vals.reduce((s,v)=>s+(isFinite(v)?v:0),0);
+    return`<tr${cls?` class="${cls}"`:''}><td>${lbl}</td>${vals.map(v=>`<td>${fRm(v)}</td>`).join('')}<td class="yr">${fRm(yr)}</td></tr>`;
+  }
+  let h='';
+  h+=`<tr class="pl-hdr"><td colspan="14">Revenue (ZAR)</td></tr>`;
+  h+=row('',`<span style="padding-left:14px;color:var(--gold-l)">Origination revenue <span style="font-size:9px;color:var(--faint)">(RC-originated deals)</span></span>`,pl.map(m=>m.origR));
+  h+=row('',`<span style="padding-left:14px;color:#8AB8FF">Placement revenue <span style="font-size:9px;color:var(--faint)">(all deals)</span></span>`,pl.map(m=>m.placeR));
+  h+=row('pl-sub','Gross Revenue',pl.map(m=>m.gross));
+  h+=row('',`<span style="padding-left:14px;color:var(--red)">Less: Kela fee share</span>`,pl.map(m=>m.kela));
+  h+=row('pl-sub','Net Revenue',pl.map(m=>m.net));
+  h+=`<tr class="pl-hdr"><td colspan="14">Operating Costs (ZAR)</td></tr>`;
+  a.costs.forEach((c,ci)=>{
+    h+=row('',`<span style="padding-left:14px">${c.l} <span style="font-size:9px;color:var(--faint)">(M${c.sm}+)</span></span>`,pl.map(m=>m.cl[ci]));
+  });
+  h+=row('pl-sub','Total Costs',pl.map(m=>m.tc));
+  h+=`<tr class="pl-hdr"><td colspan="14">Cash Flow</td></tr>`;
+  h+=row('pl-ebitda','EBITDA',pl.map(m=>m.ebitda));
+  h+=row('',`<span style="padding-left:14px;color:var(--purple)">+ Shareholder loans</span>`,pl.map(m=>m.draw));
+  h+=row('pl-cash','Net Cash (EBITDA + Loans)',pl.map(m=>m.nc));
+  const cumV=pl.map((_,i)=>pl.slice(0,i+1).reduce((s,m)=>s+m.nc,0));
+  h+=row('',`<span style="padding-left:14px">Cumulative cash</span>`,cumV,cumV[11]);
+  document.getElementById('plBody').innerHTML=h;
+}
+
+// ══════════════════════════════════════════════
+// KPI BAR + METRIC CARDS
+// ══════════════════════════════════════════════
+function updateKPIs(pl,a){
+  const yr=k=>pl.reduce((s,m)=>s+(isFinite(m[k])?m[k]:0),0);
+  const origR=yr('origR'), placeR=yr('placeR');
+  const net=yr('net'), ebitda=yr('ebitda');
+  const gfp=deals.filter(d=>d.active).reduce((s,d)=>s+d.notl*1e6*a.gfee*(d.prob/100),0)*a.fx;
+  document.getElementById('k-gfee').textContent=fR(gfp,true);
+  document.getElementById('k-orig').textContent=fR(origR,true);
+  document.getElementById('k-place').textContent=fR(placeR,true);
+  document.getElementById('k-kela').textContent=fR(-(origR+placeR)*a.kela,true);
+  const nk=document.getElementById('k-net'); nk.textContent=fR(net,true); nk.className='kv '+(net>=0?'pos':'neg');
+  const ek=document.getElementById('k-ebitda'); ek.textContent=fR(ebitda,true); ek.className='kv '+(ebitda>=0?'pos':'neg');
+  const bk=pl.find((_,i)=>pl.slice(0,i+1).reduce((s,m)=>s+m.nc,0)>=0);
+  document.getElementById('k-break').textContent=bk?'M'+bk.mo:'> Y1';
+
+  // @100% (unweighted) figures — full upside if every active deal closes
+  let gfp100=0,orig100=0,place100=0;
+  deals.filter(d=>d.active).forEach(d=>{
+    const c=calcDeal(d,a);
+    gfp100+=c.grossFee; orig100+=c.origRev100; place100+=c.placeRev100;
+  });
+  gfp100*=a.fx; orig100*=a.fx; place100*=a.fx;
+  const gross100=orig100+place100;
+  const net100=gross100*(1-a.kela);
+  const ebitda100=net100+yr('tc');
+  const setSub=(id,v)=>{const el=document.getElementById(id); if(el) el.textContent='@100%: '+fR(v,true);};
+  setSub('k-gfee-100',gfp100);
+  setSub('k-orig-100',orig100);
+  setSub('k-place-100',place100);
+  setSub('k-net-100',net100);
+  setSub('k-ebitda-100',ebitda100);
+}
+
+function renderCards(pl,a){
+  const yr=k=>pl.reduce((s,m)=>s+(isFinite(m[k])?m[k]:0),0);
+  const origR=yr('origR'), placeR=yr('placeR');
+  const net=yr('net'), ebitda=yr('ebitda'), drawing=pl.reduce((s,m)=>s+m.draw,0);
+  const gross=origR+placeR;
+  const probNotl=deals.filter(d=>d.cmo>0&&d.active).reduce((s,d)=>s+d.notl*(d.prob/100),0);
+  const gfp=deals.filter(d=>d.active).reduce((s,d)=>s+d.notl*1e6*a.gfee*(d.prob/100),0)*a.fx;
+  const totCS=deals.filter(d=>d.active).reduce((s,d)=>{
+    const{origRev,placeRev}=calcDeal(d,a);
+    return s+(origRev+placeRev)*a.fx*(d.csp/100);
+  },0);
+  const bk=pl.find((_,i)=>pl.slice(0,i+1).reduce((s,m)=>s+m.nc,0)>=0);
+  const rcDeals=deals.filter(d=>d.origBy==='RC'&&d.notl>0&&d.active).length;
+  const activeDeals=deals.filter(d=>d.notl>0&&d.active).length;
+  const cards=[
+    {l:"Total Gross Fee Pool",v:fR(gfp),hi:true,sub:`${activeDeals} active deal${activeDeals!==1?'s':''}`},
+    {l:"Origination Revenue",v:fR(origR),hi:true,cls:'pos',sub:`${rcDeals} RC-originated deal${rcDeals!==1?'s':''}`},
+    {l:"Placement Revenue",v:fR(placeR),hi:true,cls:'pos',sub:"All deals"},
+    {l:"Net Revenue",v:fR(net),hi:true,cls:net>=0?'pos':'neg'},
+    {l:"EBITDA",v:fR(ebitda),hi:true,cls:ebitda>=0?'pos':'neg'},
+    {l:"Revenue / Partner",v:fR(net/3),cls:net>0?'pos':'neg'},
+    {l:"Shareholder Loans",v:fR(drawing),sub:"Pre-revenue capital"},
+    {l:"Total Consultant Split",v:totCS>0?fR(totCS):'—',cls:totCS>0?'pos':'',sub:"All active deals"},
+    {l:"Net after Consultant",v:fR(gross-totCS-(origR+placeR)*a.kela+yr('tc')),cls:(gross-totCS)>=0?'pos':'neg'},
+    {l:"Prob-weighted Notional",v:'$'+probNotl.toFixed(0)+'m USD',sub:"Expected deployed"},
+    {l:"Orig rev % of gross",v:gross>0?((origR/gross)*100).toFixed(1)+'%':'—'},
+    {l:"Placement rev % of gross",v:gross>0?((placeR/gross)*100).toFixed(1)+'%':'—'},
+    {l:"Cash Breakeven",v:bk?'M'+bk.mo:'> Year 1',sub:"First month cumulative ≥ 0"},
+  ];
+  document.getElementById('cardGrid').innerHTML=cards.map(c=>`
+    <div class="card${c.hi?' hi':''}">
+      <div class="cl">${c.l}</div>
+      <div class="cv${c.cls?' '+c.cls:''}">${c.v}</div>
+      ${c.sub?`<div class="cs">${c.sub}</div>`:''}
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════════════
+// MASTER COMPUTE
+// ══════════════════════════════════════════════
+function compute(){
+  const a=ga();
+  updateCells(a);
+  const pl=calcPL(a);
+  updateKPIs(pl,a);
+  renderPL(pl,a);
+  renderCards(pl,a);
+  if(window.CS && window.CS.ready) CScheduleSave();
+}
+
+function showTab(name,btn){
+  ['deals','pl','metrics'].forEach(t=>document.getElementById('pane-'+t).style.display=t===name?'':'none');
+  document.querySelectorAll('.tab:not(.asm-toggle)').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+}
+
+function toggleAsm(btn){
+  const aside=document.getElementById('sidebar');
+  const open=aside.classList.toggle('open');
+  btn.classList.toggle('on',open);
+}
+
+// ══════════════════════════════════════════════
+// DEAL TABLE FONT SIZE
+// ══════════════════════════════════════════════
+let tblFontSize = 12;
+function changeFontSize(delta){
+  tblFontSize = Math.max(9, Math.min(18, tblFontSize + delta));
+  document.getElementById('fontSizeLabel').textContent = tblFontSize + 'px';
+  const tbl = document.getElementById('dealTbl');
+  if(tbl) tbl.style.fontSize = tblFontSize + 'px';
+  // Scale inputs & selects inside table to match
+  tbl.querySelectorAll('input, select').forEach(el => el.style.fontSize = tblFontSize + 'px');
+  // Row height naturally follows — but nudge cell padding slightly for readability
+  const pad = tblFontSize >= 14 ? '7px 8px' : tblFontSize >= 12 ? '5px 7px' : '3px 5px';
+  tbl.querySelectorAll('td').forEach(td => { if(!td.classList.contains('calc')) td.style.padding = pad; });
+}
+
+// ══════════════════════════════════════════════
+// DRAG-AND-DROP ROW REORDER
+// ══════════════════════════════════════════════
+(function(){
+  const tbody = document.getElementById('dealBody');
+  let dragSrc = null;
+
+  tbody.addEventListener('mousedown', e => {
+    const handle = e.target.closest('.drag-handle');
+    if (!handle) return;
+    const tr = handle.closest('tr');
+    if (!tr) return;
+
+    // Make the row draggable on handle mousedown
+    tr.setAttribute('draggable', 'true');
+
+    tr.addEventListener('dragend', function onEnd(){
+      tr.removeAttribute('draggable');
+      tr.classList.remove('dragging-row');
+      tbody.querySelectorAll('tr').forEach(r=>{
+        r.classList.remove('drag-over-top','drag-over-bot');
+      });
+      tr.removeEventListener('dragend', onEnd);
+    }, {once:true});
+  });
+
+  tbody.addEventListener('dragstart', e => {
+    dragSrc = e.target.closest('tr');
+    if (!dragSrc) return;
+    dragSrc.classList.add('dragging-row');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', dragSrc.dataset.id);
+  });
+
+  tbody.addEventListener('dragover', e => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    const target = e.target.closest('tr');
+    if (!target || target === dragSrc) return;
+    tbody.querySelectorAll('tr').forEach(r=>r.classList.remove('drag-over-top','drag-over-bot'));
+    const rect = target.getBoundingClientRect();
+    const mid  = rect.top + rect.height / 2;
+    target.classList.add(e.clientY < mid ? 'drag-over-top' : 'drag-over-bot');
+  });
+
+  tbody.addEventListener('dragleave', e => {
+    const target = e.target.closest('tr');
+    if (target) target.classList.remove('drag-over-top','drag-over-bot');
+  });
+
+  tbody.addEventListener('drop', e => {
+    e.preventDefault();
+    tbody.querySelectorAll('tr').forEach(r=>r.classList.remove('drag-over-top','drag-over-bot'));
+    const target = e.target.closest('tr');
+    if (!target || target === dragSrc) return;
+
+    const rect = target.getBoundingClientRect();
+    const before = e.clientY < rect.top + rect.height / 2;
+
+    // Reorder DOM
+    if (before) tbody.insertBefore(dragSrc, target);
+    else        tbody.insertBefore(dragSrc, target.nextSibling);
+
+    // Sync deals array to match new DOM order
+    const newOrder = [...tbody.querySelectorAll('tr[data-id]')].map(tr => +tr.dataset.id);
+    deals.sort((a,b) => newOrder.indexOf(a.id) - newOrder.indexOf(b.id));
+
+    compute();
+  });
+})();
+
+// ══════════════════════════════════════════════
+// SIDEBAR RESIZE
+// ══════════════════════════════════════════════
+(function(){
+  const handle = document.getElementById('resizeHandle');
+  const sidebar = document.getElementById('sidebar');
+  let dragging = false, startX = 0, startW = 0;
+
+  handle.addEventListener('mousedown', e => {
+    dragging = true;
+    startX = e.clientX;
+    startW = sidebar.offsetWidth;
+    handle.classList.add('dragging');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    e.preventDefault();
+  });
+
+  document.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    const delta = e.clientX - startX;
+    const newW = Math.max(220, Math.min(560, startW + delta));
+    sidebar.style.width = newW + 'px';
+    sidebar.style.minWidth = newW + 'px';
+  });
+
+  document.addEventListener('mouseup', () => {
+    if (!dragging) return;
+    dragging = false;
+    handle.classList.remove('dragging');
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+  });
+})();
+// ══════════════════════════════════════════════
+// CLOUD SYNC — shared p1_versions table on Supabase
+// ══════════════════════════════════════════════
+window.CS={sb:null,me:null,activeId:null,activeName:'',versions:[],ready:false,hydrating:false,saveTimer:null};
+
+function CStatus(text,cls){
+  const el=document.getElementById('cs-status');
+  if(!el) return;
+  el.textContent=text;
+  el.className='cs-status'+(cls?' '+cls:'');
+}
+
+function CGetState(){
+  const fx=parseFloat(document.getElementById('a-fx').value)||19;
+  const gfee=parseFloat(document.getElementById('a-gfee').value)||0;
+  const osh=parseFloat(document.getElementById('a-osh').value)||0;
+  const psh=parseFloat(document.getElementById('a-psh').value)||0;
+  const kela=parseFloat(document.getElementById('a-kela').value)||0;
+  const costs=[...document.querySelectorAll('#costBody tr')].map(tr=>{
+    const i=tr.querySelectorAll('input');
+    return{l:tr.dataset.l,a:N(i[0].value),sm:N(i[1].value)||1};
+  });
+  const draws=[...document.querySelectorAll('#drawCont .drow')].map(r=>{
+    const i=r.querySelectorAll('input');
+    return{mo:N(i[0].value),amt:N(i[1].value)};
+  });
+  return{deals:JSON.parse(JSON.stringify(deals)),assumptions:{fx,gfee_bps:gfee,osh,psh,kela,costs,draws}};
+}
+
+function CApplyState(st){
+  if(!st||typeof st!=='object') return;
+  window.CS.hydrating=true;
+  try{
+    if(Array.isArray(st.deals)){
+      deals=st.deals.map(d=>({...d}));
+      nextId=Math.max(0,...deals.map(d=>+d.id||0))+1;
+    }
+    const a=st.assumptions||{};
+    if(a.fx!=null) document.getElementById('a-fx').value=a.fx;
+    if(a.gfee_bps!=null) document.getElementById('a-gfee').value=a.gfee_bps;
+    if(a.osh!=null) document.getElementById('a-osh').value=a.osh;
+    if(a.psh!=null) document.getElementById('a-psh').value=a.psh;
+    if(a.kela!=null) document.getElementById('a-kela').value=a.kela;
+    if(Array.isArray(a.costs)){
+      const rows=document.querySelectorAll('#costBody tr');
+      a.costs.forEach((c,i)=>{
+        if(rows[i]){
+          const inps=rows[i].querySelectorAll('input');
+          if(c.a!=null) inps[0].value=c.a;
+          if(c.sm!=null) inps[1].value=c.sm;
+        }
+      });
+    }
+    if(Array.isArray(a.draws)){
+      const rows=document.querySelectorAll('#drawCont .drow');
+      a.draws.forEach((d,i)=>{
+        if(rows[i]){
+          const inps=rows[i].querySelectorAll('input');
+          if(d.mo!=null) inps[0].value=d.mo;
+          if(d.amt!=null) inps[1].value=d.amt;
+        }
+      });
+    }
+    const ga2=ga();
+    renderDealTable(ga2);
+  }finally{
+    window.CS.hydrating=false;
+  }
+}
+
+async function CLoadVersions(){
+  const{data,error}=await window.CS.sb.from('p1_versions').select('*').order('is_default',{ascending:false}).order('updated_at',{ascending:false});
+  if(error){console.error('CLoadVersions',error);return[];}
+  window.CS.versions=data||[];
+  return window.CS.versions;
+}
+
+function CRenderPicker(){
+  const sel=document.getElementById('cs-version-picker');
+  if(!sel) return;
+  sel.innerHTML=window.CS.versions.map(v=>{
+    const star=v.is_default?'★ ':'';
+    const safe=(v.name||'(unnamed)').replace(/&/g,'&amp;').replace(/</g,'&lt;');
+    return`<option value="${v.id}"${v.id===window.CS.activeId?' selected':''}>${star}${safe}</option>`;
+  }).join('');
+}
+
+async function CInit(){
+  // Wait up to ~3s for the parent app to expose its Supabase handle.
+  let tries=0;
+  while(tries<30){
+    try{
+      if(window.parent && window.parent.__resgro && window.parent.__resgro.sb) break;
+    }catch(e){break;}
+    await new Promise(r=>setTimeout(r,100));
+    tries++;
+  }
+  let parentSb=null,parentMe=null;
+  try{
+    parentSb=window.parent && window.parent.__resgro && window.parent.__resgro.sb;
+    parentMe=window.parent && window.parent.__resgro && window.parent.__resgro.getMe && window.parent.__resgro.getMe();
+  }catch(e){/* cross-origin block */}
+  if(!parentSb){CStatus('Local only','cs-warn');return;}
+  window.CS.sb=parentSb;
+  window.CS.me=parentMe;
+  if(!parentMe){CStatus('Sign in to sync','cs-warn');return;}
+  CStatus('Loading…','cs-sync');
+  try{
+    await CLoadVersions();
+    let active=window.CS.versions.find(v=>v.is_default);
+    if(!active && window.CS.versions.length===0){
+      // First-ever load — seed the default version with the model's current state.
+      const initialState=CGetState();
+      const{data,error}=await window.CS.sb.from('p1_versions').insert({
+        name:'Current',is_default:true,data:initialState,
+        created_by:parentMe.id,updated_by:parentMe.id
+      }).select().single();
+      if(error){console.error('seed Current',error);CStatus('Init error: '+error.message,'cs-err');return;}
+      window.CS.versions=[data];
+      active=data;
+    }
+    if(!active) active=window.CS.versions[0];
+    window.CS.activeId=active.id;
+    window.CS.activeName=active.name;
+    CApplyState(active.data||{});
+    CRenderPicker();
+    window.CS.ready=true;
+    CStatus('Synced — '+active.name,'cs-ok');
+  }catch(err){
+    console.error('CInit',err);
+    CStatus('Sync error','cs-err');
+  }
+}
+
+function CScheduleSave(){
+  if(window.CS.hydrating||!window.CS.sb||!window.CS.activeId) return;
+  clearTimeout(window.CS.saveTimer);
+  CStatus('Saving…','cs-sync');
+  window.CS.saveTimer=setTimeout(async()=>{
+    try{
+      const state=CGetState();
+      const{error}=await window.CS.sb.from('p1_versions').update({
+        data:state,updated_by:window.CS.me?window.CS.me.id:null
+      }).eq('id',window.CS.activeId);
+      if(error){CStatus('Save error','cs-err');console.error('save',error);return;}
+      CStatus('Synced — '+window.CS.activeName,'cs-ok');
+      // Refresh version list so updated_at ordering is current.
+      const i=window.CS.versions.findIndex(v=>v.id===window.CS.activeId);
+      if(i>=0) window.CS.versions[i].updated_at=new Date().toISOString();
+    }catch(e){console.error('save',e);CStatus('Save error','cs-err');}
+  },1200);
+}
+
+window.CSwitch=async function(id){
+  if(!window.CS.sb) return;
+  const v=window.CS.versions.find(x=>x.id===id);
+  if(!v) return;
+  // Flush any pending save before switching.
+  if(window.CS.saveTimer){clearTimeout(window.CS.saveTimer);window.CS.saveTimer=null;}
+  // Re-fetch in case another device updated it.
+  const{data,error}=await window.CS.sb.from('p1_versions').select('*').eq('id',id).single();
+  const ver=error?v:data;
+  window.CS.activeId=ver.id;
+  window.CS.activeName=ver.name;
+  CApplyState(ver.data||{});
+  CRenderPicker();
+  CStatus('Synced — '+ver.name,'cs-ok');
+};
+
+window.CSaveAs=async function(){
+  if(!window.CS.sb||!window.CS.me){alert('Sign in to save versions');return;}
+  const name=prompt('Name for this version:','My scenario');
+  if(!name||!name.trim()) return;
+  CStatus('Creating version…','cs-sync');
+  const state=CGetState();
+  const{data,error}=await window.CS.sb.from('p1_versions').insert({
+    name:name.trim(),is_default:false,data:state,
+    created_by:window.CS.me.id,updated_by:window.CS.me.id
+  }).select().single();
+  if(error){CStatus('Create error','cs-err');alert('Could not save: '+error.message);return;}
+  window.CS.versions.unshift(data);
+  window.CS.activeId=data.id;
+  window.CS.activeName=data.name;
+  CRenderPicker();
+  CStatus('Synced — '+data.name,'cs-ok');
+};
+
+window.CSetDefault=async function(){
+  if(!window.CS.sb||!window.CS.activeId) return;
+  CStatus('Setting default…','cs-sync');
+  // Clear current default(s), then promote this one.
+  const{error:e1}=await window.CS.sb.from('p1_versions').update({is_default:false}).eq('is_default',true);
+  if(e1){CStatus('Error','cs-err');console.error(e1);return;}
+  const{error:e2}=await window.CS.sb.from('p1_versions').update({is_default:true}).eq('id',window.CS.activeId);
+  if(e2){CStatus('Error','cs-err');console.error(e2);return;}
+  await CLoadVersions();
+  CRenderPicker();
+  CStatus('Default — '+window.CS.activeName,'cs-ok');
+};
+
+window.CDelete=async function(){
+  if(!window.CS.sb||!window.CS.activeId) return;
+  const v=window.CS.versions.find(x=>x.id===window.CS.activeId);
+  if(!v) return;
+  if(v.is_default){alert('Cannot delete the default version. Pick another version and click ★ Default first.');return;}
+  if(!confirm('Delete version "'+v.name+'"? This cannot be undone.')) return;
+  const{error}=await window.CS.sb.from('p1_versions').delete().eq('id',window.CS.activeId);
+  if(error){alert('Could not delete: '+error.message);return;}
+  await CLoadVersions();
+  const next=window.CS.versions.find(x=>x.is_default)||window.CS.versions[0];
+  if(next){await window.CSwitch(next.id);}
+};
+
+document.addEventListener('DOMContentLoaded',async()=>{
+  renderSidebar();
+  const a=ga();
+  renderDealTable(a);
+  ['a-fx','a-gfee','a-osh','a-psh','a-kela'].forEach(id=>
+    document.getElementById(id).addEventListener('input',compute));
+  compute();
+  // Now try to hydrate from cloud; if a version exists, apply it and recompute.
+  await CInit();
+  if(window.CS.ready){
+    // After CInit applied state, re-run compute (without triggering another save).
+    window.CS.hydrating=true;
+    try{
+      const a2=ga();
+      updateCells(a2);
+      const pl=calcPL(a2);
+      updateKPIs(pl,a2);
+      renderPL(pl,a2);
+      renderCards(pl,a2);
+    }finally{
+      window.CS.hydrating=false;
+    }
+  }
+});
+</script>
+</body>
+</html>
