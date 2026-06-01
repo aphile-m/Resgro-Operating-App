@@ -506,6 +506,8 @@ header{background:linear-gradient(135deg,#0C0C1E,#141428);border-bottom:1px soli
 .kpi.hi{border-color:var(--gold-d);background:linear-gradient(135deg,#12122A,#181830)}
 .kpi .kl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:2px}
 .kpi .kv{font-family:'DM Mono',monospace;font-size:14px;font-weight:500}
+.kpi-sub{font-family:'DM Mono',monospace;font-size:9px;color:var(--faint);margin-top:1px;letter-spacing:.02em}
+.kpi-sub:empty{display:none}
 
 /* ── LAYOUT ── */
 .shell{display:flex;height:calc(100vh - 100px);overflow:hidden}
@@ -608,6 +610,12 @@ main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
 .deal-legend{font-size:9.5px;color:var(--faint);line-height:1.6}
 .btn-add{background:rgba(61,184,122,.1);border:1px solid rgba(61,184,122,.3);color:var(--green);font-family:'Outfit',sans-serif;font-size:11px;font-weight:600;padding:6px 14px;border-radius:var(--r);cursor:pointer;letter-spacing:.04em;transition:all .15s;white-space:nowrap}
 .btn-add:hover{background:rgba(61,184,122,.2);border-color:var(--green)}
+.btn-bulk{background:var(--surf3);border:1px solid var(--border2);color:var(--muted);font-family:'Outfit',sans-serif;font-size:10px;font-weight:600;padding:5px 9px;border-radius:3px;cursor:pointer;letter-spacing:.03em;transition:all .15s;white-space:nowrap}
+.btn-bulk:hover{color:var(--text);border-color:var(--gold-d);background:rgba(200,149,42,.08)}
+.name-cell{display:flex;flex-direction:column;gap:0}
+.deal-code{font-family:'DM Mono',monospace;font-size:8.5px;color:var(--gold-d);letter-spacing:.06em;padding:2px 8px 0;line-height:1}
+tr.tbl-foot-100 td{font-weight:400!important;color:var(--faint)!important;background:var(--surf)!important}
+tr.tbl-foot-100 td:first-child{background:var(--surf)!important}
 
 /* Table wrapper — horizontal scroll */
 .tbl-wrap{overflow-x:auto;overflow-y:visible;border:1px solid var(--border);border-radius:var(--r)}
@@ -621,7 +629,7 @@ table.dt col.c-pri{width:80px}
 table.dt col.c-orig{width:80px}
 table.dt col.c-notl{width:76px}
 table.dt col.c-cmo{width:52px}
-table.dt col.c-prob{width:54px}
+table.dt col.c-prob{width:120px}
 table.dt col.c-spl{width:60px}
 table.dt col.c-gfee{width:86px}
 table.dt col.c-osh{width:60px}
@@ -899,12 +907,12 @@ table.pl tr.pl-cash td:first-child{color:var(--gold-l);font-weight:700}
 
 <!-- KPI BAR -->
 <div class=&quot;kpis&quot;>
-  <div class=&quot;kpi hi&quot;><div class=&quot;kl&quot;>Gross Fee Pool</div><div class=&quot;kv&quot; id=&quot;k-gfee&quot;>—</div></div>
-  <div class=&quot;kpi hi&quot;><div class=&quot;kl&quot;>Orig Revenue</div><div class=&quot;kv pos&quot; id=&quot;k-orig&quot;>—</div></div>
-  <div class=&quot;kpi hi&quot;><div class=&quot;kl&quot;>Placement Revenue</div><div class=&quot;kv pos&quot; id=&quot;k-place&quot;>—</div></div>
+  <div class=&quot;kpi hi&quot;><div class=&quot;kl&quot;>Gross Fee Pool</div><div class=&quot;kv&quot; id=&quot;k-gfee&quot;>—</div><div class=&quot;kpi-sub&quot; id=&quot;k-gfee-100&quot;></div></div>
+  <div class=&quot;kpi hi&quot;><div class=&quot;kl&quot;>Orig Revenue</div><div class=&quot;kv pos&quot; id=&quot;k-orig&quot;>—</div><div class=&quot;kpi-sub&quot; id=&quot;k-orig-100&quot;></div></div>
+  <div class=&quot;kpi hi&quot;><div class=&quot;kl&quot;>Placement Revenue</div><div class=&quot;kv pos&quot; id=&quot;k-place&quot;>—</div><div class=&quot;kpi-sub&quot; id=&quot;k-place-100&quot;></div></div>
   <div class=&quot;kpi&quot;><div class=&quot;kl&quot;>Kela Share</div><div class=&quot;kv neg&quot; id=&quot;k-kela&quot;>—</div></div>
-  <div class=&quot;kpi hi&quot;><div class=&quot;kl&quot;>Net Revenue</div><div class=&quot;kv&quot; id=&quot;k-net&quot;>—</div></div>
-  <div class=&quot;kpi hi&quot;><div class=&quot;kl&quot;>EBITDA</div><div class=&quot;kv&quot; id=&quot;k-ebitda&quot;>—</div></div>
+  <div class=&quot;kpi hi&quot;><div class=&quot;kl&quot;>Net Revenue</div><div class=&quot;kv&quot; id=&quot;k-net&quot;>—</div><div class=&quot;kpi-sub&quot; id=&quot;k-net-100&quot;></div></div>
+  <div class=&quot;kpi hi&quot;><div class=&quot;kl&quot;>EBITDA</div><div class=&quot;kv&quot; id=&quot;k-ebitda&quot;>—</div><div class=&quot;kpi-sub&quot; id=&quot;k-ebitda-100&quot;></div></div>
   <div class=&quot;kpi&quot;><div class=&quot;kl&quot;>Cash Breakeven</div><div class=&quot;kv&quot; id=&quot;k-break&quot;>—</div></div>
 </div>
 
@@ -1003,6 +1011,12 @@ table.pl tr.pl-cash td:first-child{color:var(--gold-l);font-weight:700}
           <span id=&quot;fontSizeLabel&quot; style=&quot;font-family:'DM Mono',monospace;font-size:12px;color:var(--blue);min-width:28px;text-align:center&quot;>12px</span>
           <button onclick=&quot;changeFontSize(1)&quot;  style=&quot;background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;padding:0 4px;transition:color .15s&quot; onmouseover=&quot;this.style.color='var(--text)'&quot; onmouseout=&quot;this.style.color='var(--muted)'&quot;>+</button>
         </div>
+        <div style=&quot;display:flex;align-items:center;gap:4px;background:var(--surf2);border:1px solid var(--border);border-radius:var(--r);padding:4px 6px&quot;>
+          <span style=&quot;font-size:9px;color:var(--faint);text-transform:uppercase;letter-spacing:.07em;white-space:nowrap;padding-right:2px&quot;>Toggle</span>
+          <button class=&quot;btn-bulk&quot; onclick=&quot;bulkToggle('on')&quot; title=&quot;Turn all deals on&quot;>All on</button>
+          <button class=&quot;btn-bulk&quot; onclick=&quot;bulkToggle('off')&quot; title=&quot;Turn all deals off&quot;>All off</button>
+          <button class=&quot;btn-bulk&quot; onclick=&quot;bulkToggle('invert')&quot; title=&quot;Invert every deal's on/off state&quot;>Invert</button>
+        </div>
         <button class=&quot;btn-add&quot; onclick=&quot;addDeal()&quot;>+ Add Deal</button>
       </div>
     </div>
@@ -1039,7 +1053,7 @@ table.pl tr.pl-cash td:first-child{color:var(--gold-l);font-weight:700}
             <th>Originated by</th>
             <th>Notional<br>USD m</th>
             <th>Close<br>Mo</th>
-            <th>Prob<br>%</th>
+            <th>Milestone</th>
             <th>Placed<br>%</th>
             <th style=&quot;color:var(--gold-l)&quot;>Gross<br>Fee</th>
             <th style=&quot;color:#8AB8FF&quot;>Orig<br>Sh %</th>
@@ -1056,11 +1070,19 @@ table.pl tr.pl-cash td:first-child{color:var(--gold-l);font-weight:700}
         <tbody id=&quot;dealBody&quot;></tbody>
         <tfoot>
           <tr class=&quot;tbl-foot&quot;>
-            <td colspan=&quot;15&quot; style=&quot;text-align:right;font-size:9.5px;color:var(--faint);font-family:'Outfit',sans-serif&quot;>TOTAL EXPECTED</td>
+            <td colspan=&quot;15&quot; style=&quot;text-align:right;font-size:9.5px;color:var(--faint);font-family:'Outfit',sans-serif&quot;>TOTAL EXPECTED (prob-weighted)</td>
             <td id=&quot;f-total&quot; class=&quot;pos&quot;>—</td>
             <td id=&quot;f-total-r&quot; class=&quot;pos&quot;>—</td>
             <td></td>
             <td id=&quot;f-cs-r&quot; style=&quot;color:var(--purple)&quot;>—</td>
+            <td></td>
+          </tr>
+          <tr class=&quot;tbl-foot tbl-foot-100&quot;>
+            <td colspan=&quot;15&quot; style=&quot;text-align:right;font-size:9.5px;color:var(--faint);font-family:'Outfit',sans-serif&quot;>TOTAL @ 100% (all close)</td>
+            <td id=&quot;f-total-100&quot;>—</td>
+            <td id=&quot;f-total-r-100&quot;>—</td>
+            <td></td>
+            <td></td>
             <td></td>
           </tr>
         </tfoot>
@@ -1174,9 +1196,11 @@ function calcDeal(d,a){
   const osh=d.osh!=null?d.osh/100:a.osh;
   const psh=d.psh!=null?d.psh/100:a.psh;
   const prob=d.prob/100, spl=d.spl/100;
-  const origRev=d.origBy==='RC' ? grossFee*osh*prob : 0;
-  const placeRev=grossFee*spl*psh*prob;
-  return{grossFee,origRev,placeRev};
+  const origRev100=d.origBy==='RC' ? grossFee*osh : 0;
+  const placeRev100=grossFee*spl*psh;
+  const origRev=origRev100*prob;
+  const placeRev=placeRev100*prob;
+  return{grossFee,origRev,placeRev,origRev100,placeRev100};
 }
 
 function calcPL(a){
@@ -1236,13 +1260,16 @@ function buildRow(d,a){
   const oshPh=(a.osh*100).toFixed(0);
   const pshPh=(a.psh*100).toFixed(0);
   const cspVal=d.csp!=null?d.csp:0;
+  const codeLabel=d.code||'';
+  const msOpts=MILESTONES.map(m=>`<option value=&quot;${m.k}&quot;${d.milestone===m.k?' selected':''}>${m.l} ${m.p}%</option>`).join('')
+    +(d.milestone==='custom'||!MILESTONES.some(m=>m.k===d.milestone)?`<option value=&quot;custom&quot;${d.milestone==='custom'?' selected':''}>Custom ${d.prob}%</option>`:'');
 
   tr.innerHTML=`
     <td class=&quot;drag-handle&quot; draggable=&quot;false&quot;>⠿</td>
     <td class=&quot;act-cell&quot; style=&quot;text-align:center;vertical-align:middle;padding:4px&quot;>
       <input class=&quot;act-tog t-active&quot; type=&quot;checkbox&quot;${d.active?' checked':''} title=&quot;Include in model&quot;>
     </td>
-    <td><input class=&quot;cell-inp text-inp t-name&quot; type=&quot;text&quot; value=&quot;${d.name.replace(/&quot;/g,'&amp;quot;')}&quot;></td>
+    <td><div class=&quot;name-cell&quot;><span class=&quot;deal-code&quot;>${codeLabel}</span><input class=&quot;cell-inp text-inp t-name&quot; type=&quot;text&quot; value=&quot;${d.name.replace(/&quot;/g,'&amp;quot;')}&quot;></div></td>
     <td><input class=&quot;cell-inp text-inp t-country&quot; type=&quot;text&quot; value=&quot;${d.country||''}&quot;></td>
     <td><select class=&quot;cell-sel t-pri&quot;>${priOpts}</select></td>
     <td>
@@ -1253,7 +1280,7 @@ function buildRow(d,a){
     </td>
     <td><input class=&quot;cell-inp t-notl&quot; type=&quot;number&quot; value=&quot;${d.notl}&quot; min=&quot;0&quot; step=&quot;25&quot; placeholder=&quot;0&quot;></td>
     <td><input class=&quot;cell-inp t-cmo&quot;  type=&quot;number&quot; value=&quot;${d.cmo}&quot;  min=&quot;0&quot; max=&quot;12&quot; placeholder=&quot;0&quot;></td>
-    <td><input class=&quot;cell-inp t-prob&quot; type=&quot;number&quot; value=&quot;${d.prob}&quot; min=&quot;0&quot; max=&quot;100&quot; placeholder=&quot;50&quot;></td>
+    <td><select class=&quot;cell-sel t-prob&quot; title=&quot;Execution milestone — sets probability&quot;>${msOpts}</select></td>
     <td><input class=&quot;cell-inp t-spl&quot;  type=&quot;number&quot; value=&quot;${d.spl}&quot;  min=&quot;0&quot; max=&quot;100&quot; placeholder=&quot;30&quot;></td>
     <td class=&quot;calc val-gold&quot; id=&quot;gf-${d.id}&quot;>—</td>
     <td class=&quot;${isAG?'':'dimmed'}&quot; id=&quot;osh-cell-${d.id}&quot;><input class=&quot;cell-inp t-osh&quot; type=&quot;number&quot; value=&quot;${oshVal}&quot; min=&quot;0&quot; max=&quot;100&quot; step=&quot;5&quot; placeholder=&quot;${oshPh}&quot; ${isAG?'':'tabindex=&quot;-1&quot;'}></td>
@@ -1281,7 +1308,10 @@ function syncRow(tr,d){
   d.origBy  = tr.querySelector('.t-origby').value;
   d.notl    = N(tr.querySelector('.t-notl').value);
   d.cmo     = N(tr.querySelector('.t-cmo').value);
-  d.prob    = N(tr.querySelector('.t-prob').value);
+  const ms  = tr.querySelector('.t-prob').value;
+  d.milestone = ms;
+  const mObj = MILESTONES.find(m=>m.k===ms);
+  if(mObj) d.prob = mObj.p;   // milestone sets prob; 'custom' keeps existing prob
   d.spl     = N(tr.querySelector('.t-spl').value);
   d.csp     = N(tr.querySelector('.t-csp').value);
   const ov=parseFloat(tr.querySelector('.t-osh').value);
@@ -1306,6 +1336,7 @@ function syncRow(tr,d){
 // RENDER DEAL TABLE
 // ══════════════════════════════════════════════
 function renderDealTable(a){
+  normalizeDeals();
   const tbody=document.getElementById('dealBody');
   tbody.innerHTML='';
   deals.forEach(d=>{
@@ -1316,8 +1347,8 @@ function renderDealTable(a){
 }
 
 function addDeal(){
-  const d={id:nextId++, active:true, name:&quot;New Deal&quot;, country:&quot;&quot;, pri:&quot;&quot;, origBy:&quot;Iroko&quot;,
-           notl:0, cmo:0, prob:50, spl:30, osh:null, psh:null, csp:0};
+  const d={id:nextId++, code:nextDealCode(), active:true, name:&quot;New Deal&quot;, country:&quot;&quot;, pri:&quot;&quot;, origBy:&quot;Iroko&quot;,
+           notl:0, cmo:0, prob:10, milestone:'engaged', spl:30, osh:null, psh:null, csp:0};
   deals.push(d);
   const a=ga();
   const row=buildRow(d,a);
@@ -1337,16 +1368,65 @@ function removeDeal(id){
 }
 
 // ══════════════════════════════════════════════
+// BULK ON/OFF
+// ══════════════════════════════════════════════
+function bulkToggle(mode){
+  deals.forEach(d=>{
+    if(mode==='on') d.active=true;
+    else if(mode==='off') d.active=false;
+    else if(mode==='invert') d.active=!d.active;
+  });
+  document.querySelectorAll('#dealBody tr').forEach(tr=>{
+    const d=deals.find(x=>x.id===+tr.dataset.id);
+    if(!d) return;
+    const cb=tr.querySelector('.t-active');
+    if(cb) cb.checked=d.active;
+    tr.classList.toggle('deal-inactive', !d.active);
+  });
+  compute();
+}
+
+// ══════════════════════════════════════════════
+// DEAL CODES (RC-NNN) &amp; MILESTONES
+// ══════════════════════════════════════════════
+const MILESTONES=[
+  {k:'engaged',  l:'Engaged',  full:'Client engaged',  p:10},
+  {k:'eoi',      l:'EOI',      full:'EOI received',     p:20},
+  {k:'assessing',l:'Assessing',full:'Credit assessing', p:60},
+  {k:'approved', l:'Approved', full:'Credit approved',  p:100},
+];
+function milestoneForProb(p){
+  const m=MILESTONES.find(x=>x.p===p);
+  return m?m.k:'custom';
+}
+function nextDealCode(){
+  let max=0;
+  deals.forEach(d=>{
+    const m=/^RC-(\d+)$/.exec(d.code||'');
+    if(m) max=Math.max(max,parseInt(m[1],10));
+  });
+  return 'RC-'+String(max+1).padStart(3,'0');
+}
+// Backfill codes + milestones on any deal that lacks them (e.g. legacy cloud state).
+function normalizeDeals(){
+  deals.forEach(d=>{
+    if(!d.code) d.code=nextDealCode();
+    if(!d.milestone) d.milestone=milestoneForProb(d.prob);
+  });
+}
+
+// ══════════════════════════════════════════════
 // UPDATE CALC CELLS
 // ══════════════════════════════════════════════
 function updateCells(a){
-  let totUp=0, totGross=0;
+  let totUp=0, totGross=0, totUp100=0;
   deals.forEach(d=>{
-    const{grossFee,origRev,placeRev}=calcDeal(d,a);
+    const{grossFee,origRev,placeRev,origRev100,placeRev100}=calcDeal(d,a);
     const show=d.notl>0 &amp;&amp; d.active;
     if(d.active){
       totGross+=grossFee*(d.prob/100);
       totUp+=origRev+placeRev;
+      totUp100+=origRev100+placeRev100;
     }
 
     const gf=document.getElementById('gf-'+d.id);
@@ -1384,6 +1464,10 @@ function updateCells(a){
   const fx=a.fx;
   document.getElementById('f-total').innerHTML=totUp>0?fUm(totUp):'<span class=&quot;dim&quot;>—</span>';
   document.getElementById('f-total-r').innerHTML=fRm(totUp*fx);
+  const ft100=document.getElementById('f-total-100');
+  const ftr100=document.getElementById('f-total-r-100');
+  if(ft100) ft100.innerHTML=totUp100>0?fUm(totUp100):'<span class=&quot;dim&quot;>—</span>';
+  if(ftr100) ftr100.innerHTML=totUp100>0?fRm(totUp100*fx):'<span class=&quot;dim&quot;>—</span>';
   const totCS=deals.filter(d=>d.active).reduce((s,d)=>{
     const{origRev,placeRev}=calcDeal(d,a);
     return s+(origRev+placeRev)*a.fx*(d.csp/100);
@@ -1438,6 +1522,23 @@ function updateKPIs(pl,a){
   const ek=document.getElementById('k-ebitda'); ek.textContent=fR(ebitda,true); ek.className='kv '+(ebitda>=0?'pos':'neg');
   const bk=pl.find((_,i)=>pl.slice(0,i+1).reduce((s,m)=>s+m.nc,0)>=0);
   document.getElementById('k-break').textContent=bk?'M'+bk.mo:'> Y1';
+
+  // @100% (unweighted) figures — full upside if every active deal closes
+  let gfp100=0,orig100=0,place100=0;
+  deals.filter(d=>d.active).forEach(d=>{
+    const c=calcDeal(d,a);
+    gfp100+=c.grossFee; orig100+=c.origRev100; place100+=c.placeRev100;
+  });
+  gfp100*=a.fx; orig100*=a.fx; place100*=a.fx;
+  const gross100=orig100+place100;
+  const net100=gross100*(1-a.kela);
+  const ebitda100=net100+yr('tc');
+  const setSub=(id,v)=>{const el=document.getElementById(id); if(el) el.textContent='@100%: '+fR(v,true);};
+  setSub('k-gfee-100',gfp100);
+  setSub('k-orig-100',orig100);
+  setSub('k-place-100',place100);
+  setSub('k-net-100',net100);
+  setSub('k-ebitda-100',ebitda100);
 }
 
 function renderCards(pl,a){

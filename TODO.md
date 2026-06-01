@@ -5,48 +5,17 @@ When done, delete the item (git history preserves it).
 
 ---
 
-## P1 deal register — bulk-toggle, milestone-driven probabilities, 100% vs prob-weighted totals, deal codes, opportunity link
+## P1 deal register — opportunity link, click-to-edit, gross-fee override column
 
-Filed: 2026-05-27
+Filed: 2026-05-27. Items 1-4 SHIPPED 2026-05-27 (Tier 1). Remaining below.
 
-Six items, scoped together because items 4-6 reshape the data model and
-items 1-3 sit on top of it.
-
-1. **Bulk on/off control in the deal register toolbar.** Add three small
-   buttons next to "+ Add Deal": **All on / All off / Invert**. Each
-   flips the `active` flag on every row in one go. Recompute after.
-
-2. **Show both 100% revenue and probability-weighted revenue.** Currently
-   the KPI bar and table footer only show probability-weighted figures.
-   Add a parallel "Gross @ 100%" line alongside every weighted number so
-   the user can see both the upside and the expected case at a glance.
-   Affects: KPI bar (`k-gfee`, `k-orig`, `k-place`, `k-net`, `k-ebitda`),
-   table footer (`f-total`, `f-total-r`), and the Key Metrics cards.
-   Easiest layout: add a "100%" column to the deal register and an
-   extra row in the KPI bar, OR show "$Xm  ($Ym @100%)" inline.
-
-3. **Link the `prob %` field to four credit-execution milestones.** Replace
-   the raw percentage input with a milestone picker (dropdown or radio
-   row) that maps to fixed weights:
-   - `Client engaged` → 10%
-   - `EOI received` → 20%
-   - `Credit assessing` → 60%
-   - `Credit approved` → 100%
-
-   Store both the milestone label and the resulting prob so legacy
-   free-text probs still calc correctly during the transition. The
-   placement-likelihood (current `prob` field) is then derived from the
-   milestone — no need for a separate input. Note: these milestones are
-   *deal-execution* stages and are DIFFERENT from the opportunities table's
-   `stage` field (idea/qualifying/developing/ready/on_hold/passed), which
-   is a *sales-pipeline* stage. Both should exist on the opportunity row.
-
-4. **Deal identifier code.** Stable, human-readable ID per deal — proposed
-   format `RC-NNN` (sequential, zero-padded to 3 digits) or
-   `RC-YYYY-NNN` if year-scoping is useful. Stored on the opportunity row
-   (see item 6), surfaced as a small monospace label in the deal register
-   row next to the name. Auto-assigned on insert via a Postgres sequence
-   or trigger; never reused even if the deal is deleted.
+> DONE (Tier 1, commit on 2026-05-27): bulk on/off buttons; 100% vs
+> prob-weighted revenue (KPI sub-lines + footer @100% row); milestone-driven
+> probability picker (Engaged 10 / EOI 20 / Assessing 60 / Approved 100 +
+> Custom escape hatch); deal identifier codes (RC-NNN). These all live in
+> the inline `deals` array and persist via the existing p1_versions sync.
+> When item 6 (opportunity link) lands, migrate `code`/`milestone`/overrides
+> from the JSONB onto the opportunity row.
 
 5. **Click deal name to open a detail editor.** The deal-name cell becomes
    a clickable link (not a text input). Clicking opens the existing
