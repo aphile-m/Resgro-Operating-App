@@ -360,6 +360,7 @@ textarea.fi{resize:vertical;min-height:72px}
       <div class="slbl">Operating tools</div>
       <button class="si" onclick="goV('iroko',this)"><span class="ic">&#9670;</span>Iroko commercials</button>
       <button class="si" onclick="goV('p1model',this)"><span class="ic">&#9638;</span>P1 Model</button>
+      <button class="si" onclick="goV('irokocalc',this)"><span class="ic">&#8862;</span>Iroko Calculator</button>
       <button class="si" onclick="goV('pillars',this)"><span class="ic">&#9671;</span>Pillars &amp; ops</button>
       <button class="si" onclick="goV('roadmap',this)"><span class="ic">&#8594;</span>Roadmap</button>
     </div>
@@ -471,6 +472,1066 @@ textarea.fi{resize:vertical;min-height:72px}
     </div>
 
     <div class="view" id="v-roadmap"></div>
+    <div class="view" id="v-irokocalc"><iframe style="width:100%;height:calc(100vh - var(--th));border:none" srcdoc="<!DOCTYPE html>
+<html lang=&quot;en&quot;>
+<head>
+<meta charset=&quot;UTF-8&quot;>
+<meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;>
+<title>Resgro Capital — Iroko Deal Calculator</title>
+<link href=&quot;https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&amp;family=DM+Mono:wght@300;400;500&amp;display=swap&quot; rel=&quot;stylesheet&quot;>
+<style>
+:root{
+  --navy:#3C465A;--navy-dark:#2a3140;--navy-mid:#4e5a70;
+  --bronze:#96785A;--bronze-light:#b8967a;--bronze-pale:#e8ddd4;--bronze-xpale:#f5efe8;
+  --cream:#f8f5f1;--white:#ffffff;--text:#1a2030;--muted:#7a8499;
+  --green:#2e7d4f;--green-bg:#e8f5ee;--green-mid:#3a9a60;
+  --amber:#b8620a;--amber-bg:#fef3e8;
+  --red:#c0392b;--red-bg:#fdf0ee;
+  --teal:#1a6060;--teal-bg:#e2f0f0;--teal-dark:#155050;
+  --border:rgba(60,70,90,0.10);--shadow:0 2px 16px rgba(60,70,90,0.08);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'DM Mono',monospace;background:var(--cream);color:var(--text);min-height:100vh}
+
+/* ── HEADER ──────────────────────────────────────────────────── */
+.hdr{background:var(--navy-dark);padding:14px 32px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid var(--bronze);position:sticky;top:0;z-index:200}
+.hdr-logo{display:flex;align-items:center;gap:12px}
+.hdr-logo svg{width:30px;height:30px}
+.hdr-name{font-family:'Cormorant Garamond',serif;color:var(--white);font-size:18px;font-weight:500;letter-spacing:.04em}
+.hdr-sub{color:var(--bronze-light);font-size:8px;letter-spacing:.18em;text-transform:uppercase;margin-top:1px}
+.hdr-tag{font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:var(--bronze-light);border:1px solid var(--bronze);padding:4px 10px;border-radius:2px}
+
+/* ── GLOBALS BAR ─────────────────────────────────────────────── */
+.globals{background:var(--navy);padding:10px 32px;display:flex;gap:0;align-items:stretch;overflow-x:auto;position:sticky;top:58px;z-index:199}
+.g-desc{font-size:7px;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.3);align-self:center;border-right:1px solid rgba(255,255,255,.08);padding-right:20px;margin-right:0;line-height:1.6;white-space:nowrap}
+.g-item{display:flex;flex-direction:column;gap:4px;padding:0 20px;border-right:1px solid rgba(255,255,255,.08)}
+.g-item:last-child{border-right:none}
+.g-label{font-size:7px;letter-spacing:.14em;text-transform:uppercase;color:var(--bronze-light)}
+.g-ctrl{display:flex;align-items:center;gap:5px}
+.g-input{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:var(--white);font-family:'DM Mono',monospace;font-size:13px;padding:4px 7px;border-radius:3px;width:68px;text-align:right;transition:border-color .15s}
+.g-input:focus{outline:none;border-color:var(--bronze-light)}
+.g-unit{font-size:9px;color:rgba(255,255,255,.4)}
+
+/* ── TABS ──────────────────────────────────────────────────────── */
+.tab-bar{
+  display:flex;background:linear-gradient(to bottom,#1e2635,#2a3140);
+  position:sticky;top:116px;z-index:198;overflow-x:auto;
+  padding:10px 24px 0;gap:6px;
+  border-bottom:3px solid rgba(0,0,0,.35);
+}
+.tab-btn{
+  font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+  padding:11px 22px;border:none;cursor:pointer;
+  color:rgba(255,255,255,.38);
+  transition:all .15s;white-space:nowrap;display:flex;align-items:center;gap:9px;
+  position:relative;border-radius:6px 6px 0 0;
+  /* 3D raised look */
+  background:linear-gradient(to bottom,rgba(255,255,255,.08) 0%,rgba(0,0,0,.1) 100%);
+  border:1px solid rgba(255,255,255,.1);
+  border-bottom:3px solid rgba(0,0,0,.3);
+  box-shadow:0 -1px 0 rgba(255,255,255,.06) inset,0 3px 6px rgba(0,0,0,.25);
+  margin-bottom:-3px;
+}
+.tab-btn:hover{
+  color:rgba(255,255,255,.75);
+  background:linear-gradient(to bottom,rgba(255,255,255,.13) 0%,rgba(0,0,0,.06) 100%);
+  border-color:rgba(255,255,255,.2);
+}
+.tab-btn.active{
+  color:var(--white);font-weight:500;
+  /* pressed / raised-and-lit on active */
+  box-shadow:0 -2px 0 rgba(255,255,255,.12) inset,0 0 0 rgba(0,0,0,0);
+  border-bottom-width:3px;
+  margin-bottom:-3px;
+}
+.tab-btn.active.t-ebid{
+  background:linear-gradient(to bottom,#a8886a,#7a5e42);
+  border-color:#c4a07a;border-bottom-color:#96785A;
+  box-shadow:0 -2px 0 rgba(255,240,210,.15) inset,0 2px 8px rgba(150,120,90,.4);
+}
+.tab-btn.active.t-b70{
+  background:linear-gradient(to bottom,#5a6880,#3c4a60);
+  border-color:#6a7a90;border-bottom-color:#4e5a70;
+  box-shadow:0 -2px 0 rgba(200,220,255,.1) inset,0 2px 8px rgba(60,80,120,.4);
+}
+.tab-btn.active.t-bso{
+  background:linear-gradient(to bottom,#2e9070,#1a5a48);
+  border-color:#3ab088;border-bottom-color:#2a8060;
+  box-shadow:0 -2px 0 rgba(150,255,210,.1) inset,0 2px 8px rgba(30,120,90,.4);
+}
+.tab-btn.active.t-comp{
+  background:linear-gradient(to bottom,rgba(255,255,255,.18),rgba(255,255,255,.08));
+  border-color:rgba(255,255,255,.35);border-bottom-color:var(--white);
+  box-shadow:0 -2px 0 rgba(255,255,255,.15) inset;
+}
+.t-name{font-size:11px;letter-spacing:.1em}
+.t-badge{font-size:7px;padding:3px 8px;border-radius:3px;letter-spacing:.1em;white-space:nowrap;border:1px solid transparent}
+.tab-btn:not(.active) .t-badge{background:rgba(255,255,255,.07);color:rgba(255,255,255,.4);border-color:rgba(255,255,255,.08)}
+.tab-btn.active.t-ebid .t-badge{background:rgba(0,0,0,.25);color:#f0d9c0;border-color:rgba(0,0,0,.2)}
+.tab-btn.active.t-b70 .t-badge{background:rgba(0,0,0,.25);color:#c8d8f0;border-color:rgba(0,0,0,.2)}
+.tab-btn.active.t-bso .t-badge{background:rgba(0,0,0,.25);color:#a0e8c8;border-color:rgba(0,0,0,.2)}
+.tab-btn.active.t-comp .t-badge{background:rgba(0,0,0,.2);color:var(--white);border-color:rgba(255,255,255,.2)}
+
+/* ── PANES ────────────────────────────────────────────────────── */
+.tab-pane{display:none;padding:24px 32px 60px}
+.tab-pane.active{display:block}
+
+/* ── PER-DEAL LAYOUT ─────────────────────────────────────────── */
+.deal-layout{display:grid;grid-template-columns:290px 1fr;gap:18px;align-items:start}
+
+/* ── INPUT CARD ──────────────────────────────────────────────── */
+.inp-card{background:var(--white);border-radius:8px;border:1px solid var(--border);overflow:hidden;box-shadow:var(--shadow)}
+.inp-hdr{padding:14px 18px;border-bottom:1px solid var(--border)}
+.ih-ebid{background:linear-gradient(135deg,#3d2a14,var(--bronze))}
+.ih-b70{background:linear-gradient(135deg,var(--navy),var(--navy-mid))}
+.ih-bso{background:linear-gradient(135deg,#1a3020,#2a8060)}
+.ih-title{font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:500;color:var(--white)}
+.ih-sub{font-size:7px;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.5);margin-top:2px}
+.ih-badge{float:right;font-size:7px;letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;border-radius:2px;background:rgba(255,255,255,.14);color:rgba(255,255,255,.9);border:1px solid rgba(255,255,255,.2)}
+.inp-body{padding:16px 18px}
+.sec-lbl{font-size:7px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid var(--border)}
+.inp-row{display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(60,70,90,.04)}
+.inp-row:last-child{border-bottom:none}
+.inp-lbl{font-size:10px;color:var(--text);flex:1}
+.inp-lbl.dim{color:var(--muted);font-size:9px}
+.inp-ctrl{display:flex;align-items:center;gap:4px}
+.inp-ctrl input{font-family:'DM Mono',monospace;font-size:11px;border:1px solid var(--border);border-radius:3px;padding:4px 7px;text-align:right;width:66px;background:var(--cream);color:var(--text);transition:border-color .15s}
+.inp-ctrl input:focus{outline:none;border-color:var(--navy-mid);background:var(--white)}
+.inp-unit{font-size:8px;color:var(--muted);min-width:22px}
+.rw-toggle{display:flex;gap:4px;margin-bottom:10px;flex-wrap:wrap}
+.rw-btn{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:.08em;text-transform:uppercase;padding:4px 9px;border-radius:3px;border:1px solid var(--border);background:var(--cream);color:var(--muted);cursor:pointer;transition:all .15s}
+.rw-btn.active{background:var(--navy);color:var(--white);border-color:var(--navy)}
+.rw-tag{font-size:7px;background:var(--bronze-pale);color:var(--bronze);padding:1px 5px;border-radius:3px;margin-left:4px}
+
+/* ── DEAL OUTPUT CARD (matches screenshot) ──────────────────── */
+.deal-out{display:flex;flex-direction:column;gap:16px}
+.deal-card{background:var(--white);border-radius:8px;border:1px solid var(--border);overflow:hidden;box-shadow:var(--shadow)}
+.dc-hdr{padding:14px 20px}
+.dc-ebid{background:linear-gradient(135deg,#3d2a14,var(--bronze))}
+.dc-b70{background:linear-gradient(135deg,var(--navy),var(--navy-mid))}
+.dc-bso{background:linear-gradient(135deg,#1a3020,#2a8060)}
+.dc-name{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:500;color:var(--white)}
+.dc-sub{font-size:7px;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.5);margin-top:2px}
+.dc-badge{float:right;font-size:7px;letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;border-radius:2px;background:rgba(255,255,255,.14);color:rgba(255,255,255,.9);border:1px solid rgba(255,255,255,.2)}
+.dc-ins-badge{float:right;clear:right;font-size:7px;letter-spacing:.08em;padding:2px 7px;border-radius:10px;margin-top:4px}
+.ins-y{background:rgba(150,120,90,.3);color:#f0d9c0}
+.ins-n{background:rgba(42,128,96,.3);color:#a0e0c0}
+.dc-body{padding:14px 18px}
+
+/* Collateral tag */
+.col-tag{display:inline-block;font-size:9px;padding:4px 11px;border-radius:10px;letter-spacing:.05em;margin-bottom:12px}
+.col-none{background:rgba(192,57,43,.1);color:var(--red)}
+.col-bad{background:var(--amber-bg);color:var(--amber)}
+.col-good{background:var(--green-bg);color:var(--green)}
+
+/* EAD calc box */
+.ead-calc{background:var(--teal-bg);border-left:3px solid var(--teal);border-radius:0 4px 4px 0;padding:9px 12px;font-size:9px;color:var(--navy);line-height:1.8;margin-bottom:12px}
+.ead-calc strong{color:var(--teal)}
+
+/* Waterfall */
+.wf{background:rgba(60,70,90,.04);border-radius:4px;padding:10px 14px;margin-bottom:14px}
+.wf-r{display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:12px}
+.wf-r.wf-tot{border-top:1px solid var(--border);margin-top:4px;padding-top:6px;font-weight:500}
+.wf-r.wf-nil{opacity:.35}
+.wf-lbl{color:var(--muted)}
+.wf-op{color:var(--bronze);margin-right:5px;font-size:13px;font-weight:500}
+.wf-v-neg{color:var(--red)}
+.wf-v-pos{color:var(--text)}
+.wf-v-res{color:var(--green);font-size:13px}
+.wf-v-bron{color:var(--bronze);font-size:13px}
+
+/* 2×2 metrics — compact with prominent labels and ZAR */
+.m2g{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.mbox{background:var(--cream);border-radius:5px;padding:12px 16px 11px;border:1px solid var(--border);position:relative;overflow:hidden}
+.mbox::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:var(--bronze)}
+.mbox.mhl{background:var(--navy-dark);border-color:transparent}
+.mbox.mhl::before{background:var(--bronze-light)}
+.mbox.mteal{background:var(--teal-dark);border-color:transparent}
+.mbox.mteal::before{background:rgba(255,255,255,.3)}
+/* label — 10px, readable */
+.ml{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:3px;font-weight:400}
+.mbox.mhl .ml,.mbox.mteal .ml{color:rgba(255,255,255,.5)}
+/* USD value */
+.mv{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:500;color:var(--navy);line-height:1.05;display:inline}
+.mbox.mhl .mv,.mbox.mteal .mv{color:var(--white)}
+/* ZAR value — inline in brackets after USD */
+.mv-row{display:flex;align-items:baseline;gap:9px;flex-wrap:nowrap}
+.mzar{font-size:14px;color:var(--bronze);font-weight:500;letter-spacing:.01em}
+.mzar::before{content:'(';color:var(--muted);font-weight:400}
+.mzar::after{content:')';color:var(--muted);font-weight:400}
+.mbox.mhl .mzar{color:var(--bronze-light)}
+.mbox.mhl .mzar::before,.mbox.mhl .mzar::after{color:rgba(255,255,255,.3)}
+.mbox.mteal .mzar{color:rgba(160,230,200,.9)}
+.mbox.mteal .mzar::before,.mbox.mteal .mzar::after{color:rgba(255,255,255,.3)}
+/* sub note */
+.ms{font-size:10px;color:var(--muted);margin-top:3px}
+.mbox.mhl .ms,.mbox.mteal .ms{color:rgba(255,255,255,.45);font-size:10px}
+
+
+
+/* Spread verdict */
+.sv{display:flex;border-radius:5px;overflow:hidden;margin-bottom:10px}
+.sv-l{background:var(--navy);padding:12px 16px;flex:1}
+.sv-r{background:rgba(30,38,54,.85);padding:12px 16px;text-align:right;min-width:130px}
+.sv-lbl{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--bronze-light);margin-bottom:3px}
+.sv-val{font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--white)}
+.sv-delta{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:500}
+.sv-delta.pos{color:var(--green-mid)}
+.sv-delta.tight{color:var(--amber)}
+.sv-delta.neg{color:var(--red)}
+.sv-dsub{font-size:8px;margin-top:2px}
+.sv-dsub.pos{color:rgba(80,180,120,.7)}
+.sv-dsub.tight{color:rgba(220,150,60,.7)}
+.sv-dsub.neg{color:rgba(200,80,70,.7)}
+
+/* Sensitivity */
+.sens{background:var(--bronze-xpale);border-left:3px solid var(--bronze);border-radius:0 4px 4px 0;padding:8px 12px;font-size:9px;color:var(--navy);line-height:1.7}
+.sens strong{color:var(--bronze)}
+
+/* NII table */
+.tbl-card{background:var(--white);border-radius:8px;border:1px solid var(--border);overflow:hidden;box-shadow:var(--shadow)}
+.tbl-hdr{padding:12px 20px;background:var(--navy-dark);display:flex;align-items:center;justify-content:space-between}
+.tbl-title{font-family:'Cormorant Garamond',serif;font-size:15px;color:var(--white)}
+.tbl-sub{font-size:8px;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.35)}
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:11px}
+thead th{font-size:7px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:7px 11px;text-align:right;border-bottom:2px solid var(--border);white-space:nowrap}
+thead th:first-child{text-align:left}
+tbody td{padding:7px 11px;text-align:right;border-bottom:1px solid rgba(60,70,90,.04);font-variant-numeric:tabular-nums}
+tbody td:first-child{text-align:left;color:var(--muted);font-size:10px}
+tbody tr:hover td{background:rgba(60,70,90,.02)}
+tfoot td{padding:8px 11px;text-align:right;border-top:2px solid var(--border);font-weight:500;color:var(--navy)}
+tfoot td:first-child{text-align:left;font-size:9px;letter-spacing:.06em;text-transform:uppercase}
+.nii-bar{display:inline-block;height:3px;background:var(--bronze);border-radius:2px;opacity:.4;margin-right:6px;vertical-align:middle}
+.pill{display:inline-block;padding:2px 7px;border-radius:10px;font-size:8px;font-weight:500}
+.pill-g{background:var(--green-bg);color:var(--green)}
+.pill-a{background:var(--amber-bg);color:var(--amber)}
+.pill-r{background:var(--red-bg);color:var(--red)}
+.pill-t{background:var(--teal-bg);color:var(--teal)}
+
+/* ── COMPARISON TAB ──────────────────────────────────────────── */
+.comp-toolbar{background:var(--white);border-radius:8px;border:1px solid var(--border);padding:14px 20px;margin-bottom:18px;display:flex;align-items:center;gap:20px;flex-wrap:wrap;box-shadow:var(--shadow)}
+.ct-lbl{font-size:7px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+.tog-row{display:flex;gap:6px}
+.tog{font-family:'DM Mono',monospace;font-size:9px;padding:5px 12px;border-radius:3px;border:1px solid var(--border);background:var(--cream);color:var(--muted);cursor:pointer;transition:all .15s;user-select:none}
+.tog.on{background:var(--navy);color:var(--white);border-color:var(--navy)}
+.drag-hint{margin-left:auto;font-size:9px;color:var(--muted);display:flex;align-items:center;gap:6px;opacity:.7}
+
+/* Comparison cards */
+.comp-cards{display:grid;gap:18px;grid-template-columns:repeat(3,1fr);margin-bottom:20px}
+.cc{background:var(--white);border-radius:8px;border:1px solid var(--border);overflow:hidden;box-shadow:var(--shadow);cursor:grab;transition:transform .15s,box-shadow .2s;user-select:none}
+.cc:active{cursor:grabbing}
+.cc.dragging{opacity:.45;transform:scale(.97);box-shadow:0 8px 32px rgba(60,70,90,.2)}
+.cc.over{border-color:var(--bronze);box-shadow:0 0 0 2px var(--bronze)}
+.cc.cc-hidden{display:none}
+.cc-hdr{padding:14px 16px}
+.cc-drag{float:right;display:grid;grid-template-columns:repeat(2,4px);gap:3px;margin-top:2px;opacity:.45}
+.cc-dot{width:3px;height:3px;background:rgba(255,255,255,.85);border-radius:50%}
+/* Reuse dc colors for cc headers */
+.cc .dc-ebid,.cc .dc-b70,.cc .dc-bso{padding:14px 16px}
+.cc-body{padding:14px 16px}
+.cc-rorwa-big{font-family:'Cormorant Garamond',serif;font-size:42px;font-weight:500;text-align:center;padding:10px 0 2px;line-height:1}
+.cc-rorwa-lbl{text-align:center;font-size:7px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.cc-row{display:flex;justify-content:space-between;align-items:baseline;padding:5px 0;border-bottom:1px solid rgba(60,70,90,.04);font-size:10px}
+.cc-row:last-child{border-bottom:none}
+.cc-k{color:var(--muted);font-size:9px}
+.cc-nii-block{text-align:center;padding:10px 0;border-top:1px solid var(--border);margin-top:8px}
+.cc-nii-v{font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--bronze)}
+.cc-nii-s{font-size:8px;color:var(--muted);margin-top:2px}
+
+/* Comparison table */
+.comp-tbl{background:var(--white);border-radius:8px;border:1px solid var(--border);overflow:hidden;box-shadow:var(--shadow)}
+.comp-tbl table thead th{font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:10px 14px;text-align:right;border-bottom:2px solid var(--border);white-space:nowrap}
+.comp-tbl table thead th:first-child{text-align:left;width:180px}
+.comp-tbl table tbody td{padding:8px 14px;text-align:right;border-bottom:1px solid rgba(60,70,90,.04);font-size:10px;font-variant-numeric:tabular-nums}
+.comp-tbl table tbody td:first-child{text-align:left;font-size:9px;color:var(--muted)}
+.ctr-sec td{background:rgba(60,70,90,.05);font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--navy);font-weight:500;padding-top:10px!important}
+.ctr-hl td{background:rgba(46,125,79,.05);font-weight:500}
+.ctr-hl td:first-child{color:var(--navy)}
+
+.footer{text-align:center;padding:14px;font-size:8px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase;border-top:1px solid var(--border);margin-top:16px}
+
+/* Bottom row: lifetime + spread side by side */
+.deal-bottom{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.lt-bar{background:var(--navy-dark);border-radius:5px;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.lt-left{}
+.lt-l{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--bronze-light);margin-bottom:3px}
+.lt-v{font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--white);display:inline}
+.lt-zar{font-size:15px;color:var(--bronze-light);font-weight:500;margin-left:8px}
+.lt-zar::before{content:'(';color:rgba(255,255,255,.3)}
+.lt-zar::after{content:')';color:rgba(255,255,255,.3)}
+.lt-v-row{display:flex;align-items:baseline;gap:0;flex-wrap:nowrap;margin-top:3px}
+.lt-s{font-size:8.5px;color:rgba(255,255,255,.35);margin-top:3px}
+.sv{display:flex;border-radius:5px;overflow:hidden}
+.sv-l{background:var(--navy);padding:12px 16px;flex:1}
+.sv-r{background:rgba(30,38,54,.85);padding:12px 16px;text-align:right;min-width:120px}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class=&quot;hdr&quot;>
+  <div class=&quot;hdr-logo&quot;>
+    <svg viewBox=&quot;0 0 40 40&quot; fill=&quot;none&quot;><polygon points=&quot;20,4 36,32 4,32&quot; fill=&quot;none&quot; stroke=&quot;#96785A&quot; stroke-width=&quot;2&quot;/><polygon points=&quot;20,10 30,28 10,28&quot; fill=&quot;rgba(150,120,90,0.18)&quot;/></svg>
+    <div><div class=&quot;hdr-name&quot;>Resgro Capital</div><div class=&quot;hdr-sub&quot;>Asset Origination &amp; Structuring · P1</div></div>
+  </div>
+  <div class=&quot;hdr-tag&quot;>Iroko / Marula Deal Calculator</div>
+</div>
+
+<!-- GLOBALS -->
+<div class=&quot;globals&quot;>
+  <div class=&quot;g-desc&quot;>Three deals · EBID insured · BGFI 70M insured · BGFI 30M BSO uninsured (eligible collateral) · All scenarios clear 6.5% RoRWA</div>
+  <div class=&quot;g-item&quot; style=&quot;padding-left:20px&quot;>
+    <div class=&quot;g-label&quot;>Model</div><div class=&quot;g-ctrl&quot;><span style=&quot;font-size:13px;color:var(--white);letter-spacing:.04em&quot;>IRB</span></div>
+  </div>
+  <div class=&quot;g-item&quot;>
+    <div class=&quot;g-label&quot;>RW — Insured</div><div class=&quot;g-ctrl&quot;><span id=&quot;g_rw_ins_disp&quot; style=&quot;font-size:13px;color:var(--white)&quot;>6%</span></div>
+  </div>
+  <div class=&quot;g-item&quot;>
+    <div class=&quot;g-label&quot;>RW — Uninsured</div><div class=&quot;g-ctrl&quot;><span style=&quot;font-size:13px;color:var(--white)&quot;>191%</span></div>
+  </div>
+  <div class=&quot;g-item&quot;>
+    <div class=&quot;g-label&quot;>Cost of Funds</div>
+    <div class=&quot;g-ctrl&quot;><input class=&quot;g-input&quot; id=&quot;g_cof&quot; type=&quot;number&quot; value=&quot;150&quot; step=&quot;5&quot; oninput=&quot;recalcAll()&quot;><span class=&quot;g-unit&quot;>bps</span></div>
+  </div>
+  <div class=&quot;g-item&quot;>
+    <div class=&quot;g-label&quot;>USD / ZAR</div>
+    <div class=&quot;g-ctrl&quot;><input class=&quot;g-input&quot; id=&quot;g_zar&quot; type=&quot;number&quot; value=&quot;16.55&quot; step=&quot;0.01&quot; oninput=&quot;recalcAll()&quot;><span class=&quot;g-unit&quot;>spot</span></div>
+  </div>
+  <div class=&quot;g-item&quot;>
+    <div class=&quot;g-label&quot;>RoRWA Target</div>
+    <div class=&quot;g-ctrl&quot;><input class=&quot;g-input&quot; id=&quot;g_tgt&quot; type=&quot;number&quot; value=&quot;6.5&quot; step=&quot;0.5&quot; oninput=&quot;recalcAll()&quot;><span class=&quot;g-unit&quot;>%</span></div>
+  </div>
+  <div class=&quot;g-item&quot;>
+    <div class=&quot;g-label&quot;>EBID Insurance</div>
+    <div class=&quot;g-ctrl&quot;><input class=&quot;g-input&quot; id=&quot;g_eins&quot; type=&quot;number&quot; value=&quot;100&quot; step=&quot;10&quot; oninput=&quot;syncGlobalIns(); recalcAll()&quot;><span class=&quot;g-unit&quot;>bps</span></div>
+  </div>
+  <div class=&quot;g-item&quot;>
+    <div class=&quot;g-label&quot;>BGFI 70M Insurance</div>
+    <div class=&quot;g-ctrl&quot;><input class=&quot;g-input&quot; id=&quot;g_bins&quot; type=&quot;number&quot; value=&quot;150&quot; step=&quot;10&quot; oninput=&quot;syncGlobalIns(); recalcAll()&quot;><span class=&quot;g-unit&quot;>bps</span></div>
+  </div>
+  <div class=&quot;g-item&quot;>
+    <div class=&quot;g-label&quot;>BSO Insurance</div>
+    <div class=&quot;g-ctrl&quot;><span style=&quot;font-size:13px;color:var(--white)&quot;>None</span></div>
+  </div>
+  <div class=&quot;g-item&quot; style=&quot;border-right:none&quot;>
+    <div class=&quot;g-label&quot; style=&quot;text-align:right&quot;>BSO uses IRB 191% on EAD</div>
+    <div style=&quot;font-size:9px;color:rgba(255,255,255,.4);text-align:right&quot;>CI Bond collateral · 7.6% EAD</div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class=&quot;tab-bar&quot;>
+  <button class=&quot;tab-btn t-ebid active&quot; onclick=&quot;switchTab('ebid',this)&quot;>
+    <span class=&quot;t-name&quot;>EBID</span><span class=&quot;t-badge&quot;>Marula Cell X</span>
+  </button>
+  <button class=&quot;tab-btn t-b70&quot; onclick=&quot;switchTab('b70',this)&quot;>
+    <span class=&quot;t-name&quot;>BGFI CI 70M</span><span class=&quot;t-badge&quot;>Cell 17 · Trade Finance</span>
+  </button>
+  <button class=&quot;tab-btn t-bso&quot; onclick=&quot;switchTab('bso',this)&quot;>
+    <span class=&quot;t-name&quot;>BGFI CI BSO</span><span class=&quot;t-badge&quot;>Cell 17 · Balance Sheet</span>
+  </button>
+  <button class=&quot;tab-btn t-comp&quot; onclick=&quot;switchTab('comp',this)&quot;>
+    <span class=&quot;t-name&quot;>Comparison</span><span class=&quot;t-badge&quot;>Side by Side</span>
+  </button>
+</div>
+
+<!-- ══════════════ EBID TAB ══════════════ -->
+<div class=&quot;tab-pane active&quot; id=&quot;tab-ebid&quot;>
+  <div class=&quot;deal-layout&quot;>
+
+    <!-- INPUTS -->
+    <div class=&quot;inp-card&quot;>
+      <div class=&quot;inp-hdr ih-ebid&quot;>
+        <span class=&quot;ih-badge&quot;>3-Tranche</span>
+        <div class=&quot;ih-title&quot;>EBID</div>
+        <div class=&quot;ih-sub&quot;>Marula Cell X · Pass-Through Note · Amortising</div>
+      </div>
+      <div class=&quot;inp-body&quot;>
+        <div class=&quot;sec-lbl&quot; style=&quot;margin-top:0&quot;>Transaction Parameters</div>
+        <div class=&quot;inp-row&quot;><span class=&quot;inp-lbl&quot;>Participation (of $600m)</span><div class=&quot;inp-ctrl&quot;><input type=&quot;number&quot; id=&quot;e_part&quot; value=&quot;150&quot; step=&quot;10&quot; min=&quot;10&quot; max=&quot;600&quot; oninput=&quot;recalcEBID()&quot;><span class=&quot;inp-unit&quot;>$m</span></div></div>
+        <div class=&quot;inp-row&quot;><span class=&quot;inp-lbl dim&quot;>T1 · 5yr · 2yr grace · 1/6</span><div class=&quot;inp-ctrl&quot;><span id=&quot;e_t1&quot; style=&quot;font-size:10px;color:var(--muted)&quot;>$25.0m</span></div></div>
+        <div class=&quot;inp-row&quot;><span class=&quot;inp-lbl dim&quot;>T2 · 8yr · 2yr grace · 5/12</span><div class=&quot;inp-ctrl&quot;><span id=&quot;e_t2&quot; style=&quot;font-size:10px;color:var(--muted)&quot;>$62.5m</span></div></div>
+        <div class=&quot;inp-row&quot;><span class=&quot;inp-lbl dim&quot;>T3 · 11yr · 2yr grace · 5/12</span><div class=&quot;inp-ctrl&quot;><span id=&quot;e_t3&quot; style=&quot;font-size:10px;color:var(--muted)&quot;>$62.5m</span></div></div>
+        <div class=&quot;inp-row&quot;><span class=&quot;inp-lbl&quot;>Deal Spread (SOFR +)</span><div class=&quot;inp-ctrl&quot;><input type=&quot;number&quot; id=&quot;e_spread&quot; value=&quot;380&quot; step=&quot;5&quot; oninput=&quot;recalcEBID()&quot;><span class=&quot;inp-unit&quot;>bps</span></div></div>
+        <div class=&quot;inp-row&quot;><span class=&quot;inp-lbl&quot;>Upfront Fee</span><div class=&quot;inp-ctrl&quot;><input type=&quot;number&quot; id=&quot;e_fee&quot; value=&quot;50&quot; step=&quot;5&quot; oninput=&quot;recalcEBID()&quot;><span class=&quot;inp-unit&quot;>bps</span></div></div>
+        <div style=&quot;margin-top:12px&quot; class=&quot;sec-lbl&quot;>Capital Treatment</div>
+        <div class=&quot;rw-toggle&quot;>
+          <button class=&quot;rw-btn&quot; data-d=&quot;e&quot; data-m=&quot;std_u&quot; onclick=&quot;setRW(this)&quot;>Std · No Ins</button>
+          <button class=&quot;rw-btn&quot; data-d=&quot;e&quot; data-m=&quot;std_i&quot; onclick=&quot;setRW(this)&quot;>Std · AA FI</button>
+          <button class=&quot;rw-btn active&quot; data-d=&quot;e&quot; data-m=&quot;irb_i&quot; onclick=&quot;setRW(this)&quot;>IRB · AA FI</button>
+        </div>
+        <div class=&quot;inp-row&quot;><span class=&quot;inp-lbl&quot;>Risk Weight <span class=&quot;rw-tag&quot; id=&quot;e_rw_tag&quot;>IRB · AA FI</span></span><div class=&quot;inp-ctrl&quot;><input type=&quot;number&quot; id=&quot;e_rw&quot; value=&quot;6&quot; step=&quot;1&quot; min=&quot;0&quot; oninput=&quot;recalcEBID()&quot;><span class=&quot;inp-unit&quot;>%</span></div></div>
+        <div class=&quot;inp-row&quot;><span class=&quot;inp-lbl&quot;>Insurance Premium</span><div class=&quot;inp-ctrl&quot;><input type=&quot;number&quot; id=&quot;e_ins&quot; value=&quot;100&quot; step=&quot;5&quot; min=&quot;0&quot; oninput=&quot;recalcEBID()&quot;><span class=&quot;inp-unit&quot;>bps</span></div></div>
+      </div>
+    </div>
+
+    <!-- OUTPUT -->
+    <div class=&quot;deal-out&quot;>
+      <div class=&quot;deal-card&quot;>
+        <div class=&quot;dc-hdr dc-ebid&quot;>
+          <span class=&quot;dc-badge&quot;>Pass-Through Note</span>
+          <span class=&quot;dc-ins-badge ins-y&quot; id=&quot;e_ins_badge&quot;>Insured · 6% RW</span>
+          <div class=&quot;dc-name&quot;>EBID</div>
+          <div class=&quot;dc-sub&quot; id=&quot;e_dc_sub&quot;>Marula Cell X · $150m of $600m · 3-Tranche · Amortising</div>
+        </div>
+        <div class=&quot;dc-body&quot;>
+          <span class=&quot;col-tag col-none&quot;>No eligible collateral · EAD = 100% notional</span>
+          <div class=&quot;wf&quot; id=&quot;e_wf&quot;>
+            <div class=&quot;wf-r&quot;><span class=&quot;wf-lbl&quot;>Deal spread</span><span class=&quot;wf-v-pos&quot; id=&quot;e_wf_spread&quot;>380bps</span></div>
+            <div class=&quot;wf-r&quot;><span class=&quot;wf-lbl&quot;><span class=&quot;wf-op&quot;>−</span>Cost of funds</span><span class=&quot;wf-v-neg&quot; id=&quot;e_wf_cof&quot;>150bps</span></div>
+            <div class=&quot;wf-r&quot;><span class=&quot;wf-lbl&quot;><span class=&quot;wf-op&quot;>−</span>Insurance premium</span><span class=&quot;wf-v-neg&quot; id=&quot;e_wf_ins&quot;>100bps</span></div>
+            <div class=&quot;wf-r wf-tot&quot;><span class=&quot;wf-lbl&quot;>Net margin (alpha)</span><span class=&quot;wf-v-res&quot; id=&quot;e_wf_net&quot;>130bps</span></div>
+          </div>
+          <div class=&quot;m2g&quot;>
+            <div class=&quot;mbox&quot;><div class=&quot;ml&quot;>EAD</div><div class=&quot;mv&quot; id=&quot;e_ead&quot;>$150m</div><div class=&quot;ms&quot;>100% of notional</div></div>
+            <div class=&quot;mbox&quot;><div class=&quot;ml&quot;>Peak RWA</div><div class=&quot;mv&quot; id=&quot;e_rwa&quot;>$9.0m</div><div class=&quot;ms&quot; id=&quot;e_rwa_s&quot;>$150m × 6%</div></div>
+            <div class=&quot;mbox&quot;><div class=&quot;ml&quot;>Peak Annual NII</div><div class=&quot;mv-row&quot;><div class=&quot;mv&quot; id=&quot;e_nii_u&quot;>$1.95m</div><span class=&quot;mzar&quot; id=&quot;e_nii_z&quot;>R32.3m</span></div></div>
+            <div class=&quot;mbox mhl&quot;><div class=&quot;ml&quot;>Peak RoRWA</div><div class=&quot;mv&quot; id=&quot;e_rorwa&quot;>21.7%</div><div class=&quot;ms&quot; style=&quot;font-size:11px&quot;>vs <span id=&quot;e_tgt_l&quot;>6.5</span>% target</div></div>
+          </div>
+          <div class=&quot;deal-bottom&quot;><div class=&quot;lt-bar&quot;><div><div class=&quot;lt-l&quot;>Lifetime NII (incl. upfront fee)</div><div class=&quot;lt-v-row&quot;><span class=&quot;lt-v&quot; id=&quot;e_lt_u&quot;>$11.15m</span><span class=&quot;lt-zar&quot; id=&quot;e_lt_z&quot;>R184.5m</span></div><div class=&quot;lt-s&quot;>over 11yr amortising life</div></div></div><div class=&quot;sv&quot;>
+            <div class=&quot;sv-l&quot;><div class=&quot;sv-lbl&quot;>Required Spread @ <span class=&quot;sv-tgt-lbl&quot;>6.5</span>%</div><div class=&quot;sv-val&quot; id=&quot;e_req&quot;>289bps</div></div>
+            <div class=&quot;sv-r&quot;><div class=&quot;sv-lbl&quot;>Headroom</div><div class=&quot;sv-delta pos&quot; id=&quot;e_delta&quot;>+91bps</div><div class=&quot;sv-dsub pos&quot; id=&quot;e_dsub&quot;>above required</div></div>
+          </div></div><div class=&quot;sens&quot;>Insurance sensitivity: deal breaks only if premium exceeds <strong id=&quot;e_beven&quot;>241bps</strong>. <span id=&quot;e_sens_detail&quot;>141bps of insurance headroom at 100bps assumed.</span></div>
+        </div>
+      </div>
+      <div class=&quot;tbl-card&quot;>
+        <div class=&quot;tbl-hdr&quot;>
+          <div class=&quot;tbl-title&quot;>Annual NII Schedule</div>
+          <div class=&quot;tbl-sub&quot;>Semi-annual amort. post grace · net of CoF &amp; insurance</div>
+        </div>
+        <div class=&quot;tbl-wrap&quot;>
+          <table>
+            <thead><tr><th style=&quot;text-align:left&quot;>Year</th><th>T1 Outst.</th><th>T2 Outst.</th><th>T3 Outst.</th><th>NII T1</th><th>NII T2</th><th>NII T3</th><th>Total NII ($m)</th><th>Total NII (Rm)</th><th>RWA ($m)</th><th>RoRWA</th></tr></thead>
+            <tbody id=&quot;e_tbody&quot;></tbody>
+            <tfoot id=&quot;e_tfoot&quot;></tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════ BGFI 70M TAB ══════════════ -->
+<div class=&quot;tab-pane&quot; id=&quot;tab-b70&quot;>
+  <div class=&quot;deal-layout&quot;>
+    <div class=&quot;inp-card&quot;>
+      <div class=&quot;inp-hdr ih-b70&quot;>
+        <span class=&quot;ih-badge&quot;>Commodity</span>
+        <div class=&quot;ih-title&quot;>BGFI CI · $82.46m</div>
+        <div class=&quot;ih-sub&quot;>Marula Cell 17 · TRS / Secured Loan · Revolving</div>
+      </div>
+      <div class=&quot;inp-body&quot;>
+        <div class=&quot;sec-lbl&quot; style=&quot;margin-top:0&quot;>Transaction Parameters</div>
+        <div class=&quot;inp-row&quot;><span class=&quot;inp-lbl&quot;>Notional</span><div class=&quot;inp-ctrl&quot;><input type=&quot;number&quot; id=&quot;b7_n&quot; value=&quot;82.46&quot; step=&quot;1&quot; min=&quot;1&quot; oninput=&quot;recalcB70()&quot;><span class=&quot;inp-unit&quot;>$m</span></div></div>
+        <div class=&quot;inp-row&quot;><span class=&quot;inp-lbl&quot;>Tenor</span><div class=&quot;inp-ctrl&quot;><input type=&quot;number&quot; id=&quot;b7_t&quot; value=&quot;5&quot; step=&quot;1&quot; min=&quot;1&quot; max=&quot;20&quot; oninput=&quot;recalcB70()&quot;><span class=&quot;inp-unit&quot;>yr</span></div></div>
+        <div class=&quot;inp-row&quot;><span class=&quot;inp-lbl dim&quot;>Structure</span><div class=&quot;inp-ctrl&quot;><span style=&quot;font-size:10px;color:var(--muted)&quot;>Revolving bullet</span></div></div>
+        <div class=&quot;inp-row&quot;><span class=&quot;inp-lbl dim&quot;>Collateral</span><div class=&quot;inp-ctrl&quot;><span style=&quot;font-size:10px;color:var(--amber)&quot;>Ineligible (EAD=100%)</span></div></div>
+        <div class=&quot;inp-row&quot;><span class=&quot;inp-lbl&quot;>Deal Spread (Euribor +)</span><div class=&quot;inp-ctrl&quot;><input type=&quot;number&quot; id=&quot;b7_spread&quot; value=&quot;350&quot; step=&quot;5&quot; oninput=&quot;recalcB70()&quot;><span class=&quot;inp-unit&quot;>bps</span></div></div>
+        <div class=&quot;inp-row&quot;><span class=&quot;inp-lbl&quot;>Upfront Fee</span><div class=&quot;inp-ctrl&quot;><input type=&quot;number&quot; id=&quot;b7_fee&quot; value=&quot;50&quot; step=&quot;5&quot; oninput=&quot;recalcB70()&quot;><span class=&quot;inp-unit&quot;>bps</span></div></div>
+        <div style=&quot;margin-top:12px&quot; class=&quot;sec-lbl&quot;>Capital Treatment</div>
+        <div class=&quot;rw-toggle&quot;>
+          <button class=&quot;rw-btn&quot; data-d=&quot;b7&quot; data-m=&quot;std_u&quot; onclick=&quot;setRW(this)&quot;>Std · No Ins</button>
+          <button class=&quot;rw-btn&quot; data-d=&quot;b7&quot; data-m=&quot;std_i&quot; onclick=&quot;setRW(this)&quot;>Std · AA FI</button>
+          <button class=&quot;rw-btn active&quot; data-d=&quot;b7&quot; data-m=&quot;irb_i&quot; onclick=&quot;setRW(this)&quot;>IRB · AA FI</button>
+        </div>
+        <div class=&quot;inp-row&quot;><span class=&quot;inp-lbl&quot;>Risk Weight <span class=&quot;rw-tag&quot; id=&quot;b7_rw_tag&quot;>IRB · AA FI</span></span><div class=&quot;inp-ctrl&quot;><input type=&quot;number&quot; id=&quot;b7_rw&quot; value=&quot;6&quot; step=&quot;1&quot; min=&quot;0&quot; oninput=&quot;recalcB70()&quot;><span class=&quot;inp-unit&quot;>%</span></div></div>
+        <div class=&quot;inp-row&quot;><span class=&quot;inp-lbl&quot;>Insurance Premium</span><div class=&quot;inp-ctrl&quot;><input type=&quot;number&quot; id=&quot;b7_ins&quot; value=&quot;150&quot; step=&quot;5&quot; min=&quot;0&quot; oninput=&quot;recalcB70()&quot;><span class=&quot;inp-unit&quot;>bps</span></div></div>
+      </div>
+    </div>
+    <div class=&quot;deal-out&quot;>
+      <div class=&quot;deal-card&quot;>
+        <div class=&quot;dc-hdr dc-b70&quot;>
+          <span class=&quot;dc-badge&quot;>TRS / Secured Loan</span>
+          <span class=&quot;dc-ins-badge ins-y&quot; id=&quot;b7_ins_badge&quot;>Insured · 6% RW</span>
+          <div class=&quot;dc-name&quot;>BGFI CI · <span id=&quot;b7_n_hdr&quot;>$82.46m</span></div>
+          <div class=&quot;dc-sub&quot;>Marula Cell 17 · Commodity Trade Finance · Insured · <span id=&quot;b7_rw_hdr&quot;>6%</span> RW · Revolving</div>
+        </div>
+        <div class=&quot;dc-body&quot;>
+          <span class=&quot;col-tag col-bad&quot;>Warehouse receipts · Ineligible · EAD = 100% notional</span>
+          <div class=&quot;wf&quot;>
+            <div class=&quot;wf-r&quot;><span class=&quot;wf-lbl&quot;>Deal spread</span><span class=&quot;wf-v-pos&quot; id=&quot;b7_wf_spread&quot;>350bps</span></div>
+            <div class=&quot;wf-r&quot;><span class=&quot;wf-lbl&quot;><span class=&quot;wf-op&quot;>−</span>Cost of funds</span><span class=&quot;wf-v-neg&quot; id=&quot;b7_wf_cof&quot;>150bps</span></div>
+            <div class=&quot;wf-r&quot;><span class=&quot;wf-lbl&quot;><span class=&quot;wf-op&quot;>−</span>Insurance premium</span><span class=&quot;wf-v-neg&quot; id=&quot;b7_wf_ins&quot;>150bps</span></div>
+            <div class=&quot;wf-r wf-tot&quot;><span class=&quot;wf-lbl&quot;>Net margin (alpha)</span><span class=&quot;wf-v-res&quot; id=&quot;b7_wf_net&quot;>50bps</span></div>
+          </div>
+          <div class=&quot;m2g&quot;>
+            <div class=&quot;mbox&quot;><div class=&quot;ml&quot;>EAD</div><div class=&quot;mv&quot; id=&quot;b7_ead&quot;>$82.46m</div><div class=&quot;ms&quot;>100% notional · no haircut</div></div>
+            <div class=&quot;mbox&quot;><div class=&quot;ml&quot;>RWA</div><div class=&quot;mv&quot; id=&quot;b7_rwa&quot;>$4.95m</div><div class=&quot;ms&quot; id=&quot;b7_rwa_s&quot;>$82.46m × 6%</div></div>
+            <div class=&quot;mbox&quot;><div class=&quot;ml&quot;>Annual NII</div><div class=&quot;mv-row&quot;><div class=&quot;mv&quot; id=&quot;b7_nii_u&quot;>$0.41m</div><span class=&quot;mzar&quot; id=&quot;b7_nii_z&quot;>R6.8m</span></div></div>
+            <div class=&quot;mbox mhl&quot;><div class=&quot;ml&quot;>RoRWA</div><div class=&quot;mv&quot; id=&quot;b7_rorwa&quot;>8.3%</div><div class=&quot;ms&quot; style=&quot;font-size:11px&quot;>vs <span id=&quot;b7_tgt_l&quot;>6.5</span>% target</div></div>
+          </div>
+          <div class=&quot;deal-bottom&quot;><div class=&quot;lt-bar&quot;><div><div class=&quot;lt-l&quot;>Lifetime NII (5yr revolving bullet)</div><div class=&quot;lt-v-row&quot;><span class=&quot;lt-v&quot; id=&quot;b7_lt_u&quot;>$2.47m</span><span class=&quot;lt-zar&quot; id=&quot;b7_lt_z&quot;>R40.9m</span></div><div class=&quot;lt-s&quot;>incl. upfront fee</div></div></div><div class=&quot;sv&quot;>
+            <div class=&quot;sv-l&quot;><div class=&quot;sv-lbl&quot;>Required Spread @ <span class=&quot;sv-tgt-lbl&quot;>6.5</span>%</div><div class=&quot;sv-val&quot; id=&quot;b7_req&quot;>339bps</div></div>
+            <div class=&quot;sv-r&quot;><div class=&quot;sv-lbl&quot;>Headroom</div><div class=&quot;sv-delta tight&quot; id=&quot;b7_delta&quot;>+11bps</div><div class=&quot;sv-dsub tight&quot; id=&quot;b7_dsub&quot;>razor thin</div></div>
+          </div></div><div class=&quot;sens&quot;><strong>Critical:</strong> Insurance at <strong id=&quot;b7_beven&quot;>161bps</strong> breaks the deal. Thinnest margin of the three — insurance premium must be confirmed ≤150bps before any investor approach.</div>
+        </div>
+      </div>
+      <div class=&quot;tbl-card&quot;>
+        <div class=&quot;tbl-hdr&quot;>
+          <div class=&quot;tbl-title&quot;>Annual NII Schedule</div>
+          <div class=&quot;tbl-sub&quot;>Revolving bullet · 100% utilisation throughout</div>
+        </div>
+        <div class=&quot;tbl-wrap&quot;><table>
+          <thead><tr><th style=&quot;text-align:left&quot;>Year</th><th>Outstanding ($m)</th><th>NII ($m)</th><th>NII (Rm)</th><th>RWA ($m)</th><th>RoRWA</th></tr></thead>
+          <tbody id=&quot;b7_tbody&quot;></tbody><tfoot id=&quot;b7_tfoot&quot;></tfoot>
+        </table></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ BSO TAB ══════════════ -->
+<div class=&quot;tab-pane&quot; id=&quot;tab-bso&quot;>
+  <div class=&quot;deal-layout&quot;>
+    <div class=&quot;inp-card&quot;>
+      <div class=&quot;inp-hdr ih-bso&quot;>
+        <span class=&quot;ih-badge&quot;>BSO / TRS</span>
+        <div class=&quot;ih-title&quot;>BGFI CI BSO</div>
+        <div class=&quot;ih-sub&quot;>Marula Cell 17 · Balance Sheet Enhancement · Amortising</div>
+      </div>
+      <div class=&quot;inp-body&quot;>
+        <div class=&quot;sec-lbl&quot; style=&quot;margin-top:0&quot;>Transaction Parameters</div>
+        <div class=&quot;inp-row&quot;><span class=&quot;inp-lbl&quot;>Notional</span><div class=&quot;inp-ctrl&quot;><input type=&quot;number&quot; id=&quot;b3_n&quot; value=&quot;35.94&quot; step=&quot;1&quot; min=&quot;1&quot; oninput=&quot;recalcBSO()&quot;><span class=&quot;inp-unit&quot;>$m</span></div></div>
+        <div class=&quot;inp-row&quot;><span class=&quot;inp-lbl&quot;>Tenor</span><div class=&quot;inp-ctrl&quot;><input type=&quot;number&quot; id=&quot;b3_t&quot; value=&quot;5&quot; step=&quot;1&quot; min=&quot;1&quot; max=&quot;20&quot; oninput=&quot;recalcBSO()&quot;><span class=&quot;inp-unit&quot;>yr</span></div></div>
+        <div class=&quot;inp-row&quot;><span class=&quot;inp-lbl dim&quot;>Repayment</span><div class=&quot;inp-ctrl&quot;><span style=&quot;font-size:9px;color:var(--muted)&quot;>10 semi-annual equal</span></div></div>
+        <div class=&quot;inp-row&quot;><span class=&quot;inp-lbl&quot;>Deal Spread (Euribor +)</span><div class=&quot;inp-ctrl&quot;><input type=&quot;number&quot; id=&quot;b3_spread&quot; value=&quot;350&quot; step=&quot;5&quot; oninput=&quot;recalcBSO()&quot;><span class=&quot;inp-unit&quot;>bps</span></div></div>
+        <div class=&quot;inp-row&quot;><span class=&quot;inp-lbl&quot;>Upfront Fee</span><div class=&quot;inp-ctrl&quot;><input type=&quot;number&quot; id=&quot;b3_fee&quot; value=&quot;50&quot; step=&quot;5&quot; oninput=&quot;recalcBSO()&quot;><span class=&quot;inp-unit&quot;>bps</span></div></div>
+        <div style=&quot;margin-top:12px&quot; class=&quot;sec-lbl&quot;>SFT Collateral (CI Govt Bonds)</div>
+        <div class=&quot;inp-row&quot;><span class=&quot;inp-lbl&quot;>Overcollateralisation</span><div class=&quot;inp-ctrl&quot;><input type=&quot;number&quot; id=&quot;b3_oc&quot; value=&quot;120&quot; step=&quot;5&quot; min=&quot;100&quot; max=&quot;200&quot; oninput=&quot;recalcBSO()&quot;><span class=&quot;inp-unit&quot;>%</span></div></div>
+        <div class=&quot;inp-row&quot;><span class=&quot;inp-lbl&quot;>Haircut Hc (BB sovereign)</span><div class=&quot;inp-ctrl&quot;><input type=&quot;number&quot; id=&quot;b3_hc&quot; value=&quot;15&quot; step=&quot;1&quot; min=&quot;0&quot; max=&quot;50&quot; oninput=&quot;recalcBSO()&quot;><span class=&quot;inp-unit&quot;>%</span></div></div>
+        <div class=&quot;inp-row&quot;><span class=&quot;inp-lbl&quot;>FX Mismatch Hfx</span><div class=&quot;inp-ctrl&quot;><input type=&quot;number&quot; id=&quot;b3_hfx&quot; value=&quot;8&quot; step=&quot;1&quot; min=&quot;0&quot; max=&quot;15&quot; oninput=&quot;recalcBSO()&quot;><span class=&quot;inp-unit&quot;>%</span></div></div>
+        <div style=&quot;margin-top:12px&quot; class=&quot;sec-lbl&quot;>Capital Treatment</div>
+        <div class=&quot;rw-toggle&quot;>
+          <button class=&quot;rw-btn&quot; data-d=&quot;b3&quot; data-m=&quot;std_u&quot; onclick=&quot;setRW(this)&quot;>Std · No Ins</button>
+          <button class=&quot;rw-btn&quot; data-d=&quot;b3&quot; data-m=&quot;std_i&quot; onclick=&quot;setRW(this)&quot;>Std · AA FI</button>
+          <button class=&quot;rw-btn active&quot; data-d=&quot;b3&quot; data-m=&quot;irb_u&quot; onclick=&quot;setRW(this)&quot;>IRB · No Ins</button>
+          <button class=&quot;rw-btn&quot; data-d=&quot;b3&quot; data-m=&quot;irb_i&quot; onclick=&quot;setRW(this)&quot;>IRB · AA FI</button>
+        </div>
+        <div class=&quot;inp-row&quot;><span class=&quot;inp-lbl&quot;>Risk Weight <span class=&quot;rw-tag&quot; id=&quot;b3_rw_tag&quot;>IRB · No Ins</span></span><div class=&quot;inp-ctrl&quot;><input type=&quot;number&quot; id=&quot;b3_rw&quot; value=&quot;191&quot; step=&quot;1&quot; min=&quot;0&quot; oninput=&quot;recalcBSO()&quot;><span class=&quot;inp-unit&quot;>%</span></div></div>
+        <div class=&quot;inp-row&quot;><span class=&quot;inp-lbl&quot;>Insurance Premium</span><div class=&quot;inp-ctrl&quot;><input type=&quot;number&quot; id=&quot;b3_ins&quot; value=&quot;0&quot; step=&quot;5&quot; min=&quot;0&quot; oninput=&quot;recalcBSO()&quot;><span class=&quot;inp-unit&quot;>bps</span></div></div>
+      </div>
+    </div>
+    <div class=&quot;deal-out&quot;>
+      <div class=&quot;deal-card&quot;>
+        <div class=&quot;dc-hdr dc-bso&quot;>
+          <span class=&quot;dc-badge&quot;>BSO / TRS</span>
+          <span class=&quot;dc-ins-badge ins-n&quot; id=&quot;b3_ins_badge&quot;>Uninsured · 191% RW on EAD</span>
+          <div class=&quot;dc-name&quot;>BGFI CI · <span id=&quot;b3_n_hdr&quot;>$35.94m</span></div>
+          <div class=&quot;dc-sub&quot;>Marula Cell 17 · Balance Sheet Enhancement · Amortising</div>
+        </div>
+        <div class=&quot;dc-body&quot;>
+          <span class=&quot;col-tag col-good&quot;>CI govt bonds 120% OC · Title transfer · EAD = 7.6% of notional</span>
+          <div class=&quot;ead-calc&quot; id=&quot;b3_ead_calc_box&quot;>
+            EAD = max(0, E − 1.20E × (1 − Hc − Hfx))<br>
+            Hc = 15% (BB-/Ba2 sovereign bonds, any tenor) · Hfx = 8% (XOF vs EUR/USD)<br>
+            EAD = E × (1 − 1.20 × 0.77) = <strong>7.6% × notional</strong>
+          </div>
+          <div class=&quot;wf&quot;>
+            <div class=&quot;wf-r&quot;><span class=&quot;wf-lbl&quot;>Deal spread</span><span class=&quot;wf-v-pos&quot; id=&quot;b3_wf_spread&quot;>350bps</span></div>
+            <div class=&quot;wf-r&quot;><span class=&quot;wf-lbl&quot;><span class=&quot;wf-op&quot;>−</span>Cost of funds</span><span class=&quot;wf-v-neg&quot; id=&quot;b3_wf_cof&quot;>150bps</span></div>
+            <div class=&quot;wf-r wf-nil&quot;><span class=&quot;wf-lbl&quot;><span class=&quot;wf-op&quot;>−</span>Insurance premium</span><span style=&quot;color:var(--muted)&quot; id=&quot;b3_wf_ins&quot;>nil</span></div>
+            <div class=&quot;wf-r wf-tot&quot;><span class=&quot;wf-lbl&quot;>Net margin (alpha)</span><span class=&quot;wf-v-bron&quot; id=&quot;b3_wf_net&quot;>200bps</span></div>
+          </div>
+          <div class=&quot;m2g&quot;>
+            <div class=&quot;mbox&quot;><div class=&quot;ml&quot;>Yr 1 EAD</div><div class=&quot;mv&quot; id=&quot;b3_ead&quot;>$2.46m</div><div class=&quot;ms&quot; id=&quot;b3_ead_s&quot;>7.6% × $32.35m avg</div></div>
+            <div class=&quot;mbox&quot;><div class=&quot;ml&quot;>Yr 1 RWA</div><div class=&quot;mv&quot; id=&quot;b3_rwa&quot;>$4.70m</div><div class=&quot;ms&quot; id=&quot;b3_rwa_s&quot;>$2.46m × 191%</div></div>
+            <div class=&quot;mbox&quot;><div class=&quot;ml&quot;>Yr 1 NII</div><div class=&quot;mv-row&quot;><div class=&quot;mv&quot; id=&quot;b3_nii_u&quot;>$0.65m</div><span class=&quot;mzar&quot; id=&quot;b3_nii_z&quot;>R10.7m</span></div></div>
+            <div class=&quot;mbox mteal&quot;><div class=&quot;ml&quot;>RoRWA</div><div class=&quot;mv&quot; id=&quot;b3_rorwa&quot;>13.8%</div><div class=&quot;ms&quot;>constant throughout</div></div>
+          </div>
+          <div class=&quot;deal-bottom&quot;><div class=&quot;lt-bar&quot;><div><div class=&quot;lt-l&quot;>Lifetime NII (5yr amortising)</div><div class=&quot;lt-v-row&quot;><span class=&quot;lt-v&quot; id=&quot;b3_lt_u&quot;>$1.98m</span><span class=&quot;lt-zar&quot; id=&quot;b3_lt_z&quot;>R32.7m</span></div><div class=&quot;lt-s&quot;>incl. upfront fee</div></div></div><div class=&quot;sv&quot;>
+            <div class=&quot;sv-l&quot;><div class=&quot;sv-lbl&quot;>Required Spread @ <span class=&quot;sv-tgt-lbl&quot;>6.5</span>%</div><div class=&quot;sv-val&quot; id=&quot;b3_req&quot;>244bps</div></div>
+            <div class=&quot;sv-r&quot;><div class=&quot;sv-lbl&quot;>Headroom</div><div class=&quot;sv-delta pos&quot; id=&quot;b3_delta&quot;>+106bps</div><div class=&quot;sv-dsub pos&quot; id=&quot;b3_dsub&quot;>above required</div></div>
+          </div></div><div class=&quot;sens&quot;>No insurance cost — 200bps net margin on 7.6% EAD. Break-even spread: <strong id=&quot;b3_beven&quot;>244bps</strong>. If EUR bonds (Hfx=0): EAD drops to ~<strong id=&quot;b3_eur_ead&quot;>1.96%</strong> — confirm with Iroko.</div>
+          <div class=&quot;sens&quot; style=&quot;margin-top:6px;border-left-color:var(--teal);background:var(--teal-bg);font-size:10px;line-height:1.9&quot;>
+            <strong style=&quot;color:var(--teal)&quot;>Why the required spread is low despite 191% RW:</strong> RWA is on EAD, not notional. At <span id=&quot;b3_ead_factor_note&quot;>7.6%</span> EAD, the effective RWA density on notional is only <span id=&quot;b3_eff_rwa_note&quot;>14.5%</span>. So net margin needed = target × EAD factor × RW = 6.5% × <span id=&quot;b3_ead_factor_note2&quot;>7.6%</span> × <span id=&quot;b3_rw_note&quot;>191</span> = <strong id=&quot;b3_nm_needed_note&quot;>~94bps</strong> → required spread = CoF + <span id=&quot;b3_nm_needed_note2&quot;>94bps</span> = <strong id=&quot;b3_req_note&quot;>244bps</strong>.
+          </div>
+        </div>
+      </div>
+      <div class=&quot;tbl-card&quot;>
+        <div class=&quot;tbl-hdr&quot;>
+          <div class=&quot;tbl-title&quot;>Annual NII Schedule — Amortising</div>
+          <div class=&quot;tbl-sub&quot;>EAD = <span id=&quot;b3_ead_pct_hdr&quot;>7.6%</span> × avg outstanding · IRB RW on EAD</div>
+        </div>
+        <div class=&quot;tbl-wrap&quot;><table>
+          <thead><tr><th style=&quot;text-align:left&quot;>Year</th><th>Avg Notional</th><th>EAD</th><th>NII ($m)</th><th>NII (Rm)</th><th>RWA ($m)</th><th>RoRWA</th></tr></thead>
+          <tbody id=&quot;b3_tbody&quot;></tbody><tfoot id=&quot;b3_tfoot&quot;></tfoot>
+        </table></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ COMPARISON TAB ══════════════ -->
+<div class=&quot;tab-pane&quot; id=&quot;tab-comp&quot;>
+  <div class=&quot;comp-toolbar&quot;>
+    <div>
+      <div class=&quot;ct-lbl&quot;>Show / Hide Deals</div>
+      <div class=&quot;tog-row&quot;>
+        <span class=&quot;tog on&quot; data-deal=&quot;ebid&quot; onclick=&quot;toggleDeal(this)&quot;>EBID</span>
+        <span class=&quot;tog on&quot; data-deal=&quot;b70&quot; onclick=&quot;toggleDeal(this)&quot;>BGFI CI 70m</span>
+        <span class=&quot;tog on&quot; data-deal=&quot;bso&quot; onclick=&quot;toggleDeal(this)&quot;>BGFI CI BSO</span>
+      </div>
+    </div>
+    <div class=&quot;drag-hint&quot;><span>⠿</span><span>Drag cards to reorder — table follows</span></div>
+  </div>
+
+  <div class=&quot;comp-cards&quot; id=&quot;comp-row&quot;>
+
+    <div class=&quot;cc&quot; data-deal=&quot;ebid&quot; draggable=&quot;true&quot;>
+      <div class=&quot;dc-hdr dc-ebid&quot;>
+        <div class=&quot;cc-drag&quot;><div class=&quot;cc-dot&quot;></div><div class=&quot;cc-dot&quot;></div><div class=&quot;cc-dot&quot;></div><div class=&quot;cc-dot&quot;></div><div class=&quot;cc-dot&quot;></div><div class=&quot;cc-dot&quot;></div></div>
+        <div class=&quot;dc-name&quot; style=&quot;font-size:16px&quot;>EBID</div>
+        <div class=&quot;dc-sub&quot;>$<span id=&quot;cc_e_notional&quot;>150</span>m · Pass-Through Note · Insured</div>
+      </div>
+      <div class=&quot;cc-body&quot;>
+        <div class=&quot;cc-rorwa-big&quot; id=&quot;cc_e_rorwa&quot; style=&quot;color:var(--green-mid)&quot;>21.7%</div>
+        <div class=&quot;cc-rorwa-lbl&quot;>RoRWA</div>
+        <div class=&quot;cc-row&quot;><span class=&quot;cc-k&quot;>Net margin</span><span id=&quot;cc_e_nm&quot;>130bps</span></div>
+        <div class=&quot;cc-row&quot;><span class=&quot;cc-k&quot;>Peak RWA</span><span id=&quot;cc_e_rwa&quot;>$9.0m</span></div>
+        <div class=&quot;cc-row&quot;><span class=&quot;cc-k&quot;>Peak annual NII</span><span id=&quot;cc_e_nii&quot;>$1.95m / R32.3m</span></div>
+        <div class=&quot;cc-row&quot;><span class=&quot;cc-k&quot;>Required spread</span><span id=&quot;cc_e_req&quot;>289bps</span></div>
+        <div class=&quot;cc-row&quot;><span class=&quot;cc-k&quot;>Headroom</span><span id=&quot;cc_e_head&quot; style=&quot;color:var(--green-mid);font-weight:500&quot;>+91bps ✓</span></div>
+        <div class=&quot;cc-nii-block&quot;><div class=&quot;cc-nii-v&quot; id=&quot;cc_e_life&quot;>R184.5m</div><div class=&quot;cc-nii-s&quot;>lifetime NII · 11yr amortising</div></div>
+      </div>
+    </div>
+
+    <div class=&quot;cc&quot; data-deal=&quot;b70&quot; draggable=&quot;true&quot;>
+      <div class=&quot;dc-hdr dc-b70&quot;>
+        <div class=&quot;cc-drag&quot;><div class=&quot;cc-dot&quot;></div><div class=&quot;cc-dot&quot;></div><div class=&quot;cc-dot&quot;></div><div class=&quot;cc-dot&quot;></div><div class=&quot;cc-dot&quot;></div><div class=&quot;cc-dot&quot;></div></div>
+        <div class=&quot;dc-name&quot; style=&quot;font-size:16px&quot;>BGFI CI 70m</div>
+        <div class=&quot;dc-sub&quot;>$<span id=&quot;cc_b7_notional&quot;>82.46</span>m · Commodity Trade Finance · Insured</div>
+      </div>
+      <div class=&quot;cc-body&quot;>
+        <div class=&quot;cc-rorwa-big&quot; id=&quot;cc_b7_rorwa&quot; style=&quot;color:var(--amber)&quot;>8.3%</div>
+        <div class=&quot;cc-rorwa-lbl&quot;>RoRWA</div>
+        <div class=&quot;cc-row&quot;><span class=&quot;cc-k&quot;>Net margin</span><span id=&quot;cc_b7_nm&quot;>50bps</span></div>
+        <div class=&quot;cc-row&quot;><span class=&quot;cc-k&quot;>RWA</span><span id=&quot;cc_b7_rwa&quot;>$4.95m</span></div>
+        <div class=&quot;cc-row&quot;><span class=&quot;cc-k&quot;>Annual NII</span><span id=&quot;cc_b7_nii&quot;>$0.41m / R6.8m</span></div>
+        <div class=&quot;cc-row&quot;><span class=&quot;cc-k&quot;>Required spread</span><span id=&quot;cc_b7_req&quot;>339bps</span></div>
+        <div class=&quot;cc-row&quot;><span class=&quot;cc-k&quot;>Headroom</span><span id=&quot;cc_b7_head&quot; style=&quot;color:var(--amber);font-weight:500&quot;>+11bps ⚠</span></div>
+        <div class=&quot;cc-nii-block&quot;><div class=&quot;cc-nii-v&quot; id=&quot;cc_b7_life&quot;>R40.9m</div><div class=&quot;cc-nii-s&quot;>lifetime NII · 5yr revolving bullet</div></div>
+      </div>
+    </div>
+
+    <div class=&quot;cc&quot; data-deal=&quot;bso&quot; draggable=&quot;true&quot;>
+      <div class=&quot;dc-hdr dc-bso&quot;>
+        <div class=&quot;cc-drag&quot;><div class=&quot;cc-dot&quot;></div><div class=&quot;cc-dot&quot;></div><div class=&quot;cc-dot&quot;></div><div class=&quot;cc-dot&quot;></div><div class=&quot;cc-dot&quot;></div><div class=&quot;cc-dot&quot;></div></div>
+        <div class=&quot;dc-name&quot; style=&quot;font-size:16px&quot;>BGFI CI BSO</div>
+        <div class=&quot;dc-sub&quot;>$<span id=&quot;cc_b3_notional&quot;>35.94</span>m · Balance Sheet Enhancement · Uninsured</div>
+      </div>
+      <div class=&quot;cc-body&quot;>
+        <div class=&quot;cc-rorwa-big&quot; id=&quot;cc_b3_rorwa&quot; style=&quot;color:var(--teal)&quot;>13.8%</div>
+        <div class=&quot;cc-rorwa-lbl&quot;>RoRWA</div>
+        <div class=&quot;cc-row&quot;><span class=&quot;cc-k&quot;>Net margin</span><span id=&quot;cc_b3_nm&quot;>200bps</span></div>
+        <div class=&quot;cc-row&quot;><span class=&quot;cc-k&quot;>Yr 1 RWA</span><span id=&quot;cc_b3_rwa&quot;>$4.70m</span></div>
+        <div class=&quot;cc-row&quot;><span class=&quot;cc-k&quot;>Yr 1 NII</span><span id=&quot;cc_b3_nii&quot;>$0.65m / R10.7m</span></div>
+        <div class=&quot;cc-row&quot;><span class=&quot;cc-k&quot;>Required spread</span><span id=&quot;cc_b3_req&quot;>244bps</span></div>
+        <div class=&quot;cc-row&quot;><span class=&quot;cc-k&quot;>Headroom</span><span id=&quot;cc_b3_head&quot; style=&quot;color:var(--green-mid);font-weight:500&quot;>+106bps ✓</span></div>
+        <div class=&quot;cc-nii-block&quot;><div class=&quot;cc-nii-v&quot; id=&quot;cc_b3_life&quot;>R32.7m</div><div class=&quot;cc-nii-s&quot;>lifetime NII · 5yr amortising</div></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class=&quot;comp-tbl&quot;>
+    <table id=&quot;comp-table&quot;>
+      <thead id=&quot;comp-thead&quot;></thead>
+      <tbody id=&quot;comp-tbody&quot;></tbody>
+    </table>
+  </div>
+</div>
+
+<div class=&quot;footer&quot;>Resgro Capital (Pty) Ltd · Strictly Confidential · <span id=&quot;footer_date&quot;></span></div>
+
+<script>
+// ── HELPERS ────────────────────────────────────────────────────────────
+const v=id=>parseFloat(document.getElementById(id).value)||0;
+const el=id=>document.getElementById(id);
+const fmt=(n,dp=2)=>isNaN(n)?'—':n.toFixed(dp);
+const fmtM=n=>Math.abs(n)>=1000?fmt(n/1000,1)+'bn':fmt(n,1)+'m';
+const pct=n=>fmt(n,1)+'%';
+const deltaClass=d=>d>20?'pos':d>0?'tight':'neg';
+const deltaLabel=d=>d>20?'above required':d>0?'razor thin':'below required';
+const pillClass=(r,t)=>r>=t?'pill-g':r>=t*.75?'pill-a':'pill-r';
+function pill(r,t){return`<span class=&quot;pill ${pillClass(r,t)}&quot;>${pct(r)}</span>`;}
+function colorForRoRWA(r,t){return r>=t?'var(--green-mid)':r>=t*.75?'var(--amber)':'var(--red)';}
+
+// ── TAB SWITCH ─────────────────────────────────────────────────────────
+function switchTab(id,btn){
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  el('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ── RW PRESETS ──────────────────────────────────────────────────────────
+const RWP={
+  e: {std_u:{rw:100,ins:0,lbl:'STD · No Ins'}, std_i:{rw:20,ins:100,lbl:'STD · AA FI'}, irb_i:{rw:6,ins:100,lbl:'IRB · AA FI'}},
+  b7:{std_u:{rw:100,ins:0,lbl:'STD · No Ins'}, std_i:{rw:20,ins:150,lbl:'STD · AA FI'}, irb_i:{rw:6,ins:150,lbl:'IRB · AA FI'}},
+  b3:{std_u:{rw:100,ins:0,lbl:'STD · No Ins'}, std_i:{rw:20,ins:150,lbl:'STD · AA FI'}, irb_u:{rw:191,ins:0,lbl:'IRB · No Ins'}, irb_i:{rw:6,ins:150,lbl:'IRB · AA FI'}}
+};
+function setRW(btn){
+  const d=btn.dataset.d, m=btn.dataset.m, p=RWP[d][m];
+  el(d+'_rw').value=p.rw; el(d+'_ins').value=p.ins;
+  el(d+'_rw_tag').textContent=p.lbl;
+  document.querySelectorAll(`[data-d=&quot;${d}&quot;]`).forEach(b=>b.classList.toggle('active',b.dataset.m===m));
+  if(d==='e')recalcEBID(); else if(d==='b7')recalcB70(); else recalcBSO();
+}
+
+// Sync global insurance bars with deal-level fields
+function syncGlobalIns(){
+  el('e_ins').value=v('g_eins');
+  el('b7_ins').value=v('g_bins');
+}
+
+// ── EBID ────────────────────────────────────────────────────────────────
+function ebidRows(){
+  const part=v('e_part'),spread=v('e_spread'),ins=v('e_ins'),rw=v('e_rw'),cof=v('g_cof'),usdZar=v('g_zar');
+  const t1=part/6, t2=part*5/12, t3=part*5/12;
+  const nm=(spread-cof-ins)/10000;
+  const out=(sz,n,yr)=>yr<=2?sz:Math.max(0,sz*(1-Math.min((yr-2)*2,n)/n));
+  const avg=(sz,n,yr)=>(out(sz,n,yr)+out(sz,n,yr+1))/2;
+  let rows=[],tot=0;
+  for(let yr=1;yr<=11;yr++){
+    const a1=avg(t1,6,yr),a2=avg(t2,12,yr),a3=avg(t3,18,yr);
+    const n1=a1*nm,n2=a2*nm,n3=a3*nm,nT=n1+n2+n3;
+    const avgRWA=(a1+a2+a3)*rw/100, rorwaYr=avgRWA>0?(nT/avgRWA)*100:0;
+    rows.push({yr,o1:out(t1,6,yr),o2:out(t2,12,yr),o3:out(t3,18,yr),n1,n2,n3,nT,niiZar:nT*usdZar,avgRWA,rorwaYr});
+    tot+=nT;
+  }
+  return{rows,tot,t1,t2,t3};
+}
+function recalcEBID(){
+  const{rows,tot,t1,t2,t3}=ebidRows();
+  const part=v('e_part'),spread=v('e_spread'),ins=v('e_ins'),rw=v('e_rw'),cof=v('g_cof'),usdZar=v('g_zar'),tgt=v('g_tgt'),fee=v('e_fee');
+  const nm=spread-cof-ins, peakNII=part*nm/10000, peakRWA=part*rw/100;
+  const rorwa=peakRWA>0?(peakNII/peakRWA)*100:0;
+  const req=cof+ins+(tgt*rw), delta=spread-req;
+  const upfront=part*fee/10000, totalNII=tot+upfront;
+  const beven=spread-cof-(tgt*rw);
+
+  el('e_t1').textContent='$'+fmt(t1,1)+'m'; el('e_t2').textContent='$'+fmt(t2,1)+'m'; el('e_t3').textContent='$'+fmt(t3,1)+'m';
+  // Waterfall
+  el('e_wf_spread').textContent=spread+'bps'; el('e_wf_cof').textContent=cof+'bps'; el('e_wf_ins').textContent=ins+'bps';
+  el('e_wf_net').textContent=nm+'bps'; el('e_wf_net').className=nm>=0?'wf-v-res':'wf-v-neg';
+  // Metrics
+  el('e_ead').textContent='$'+fmt(part,0)+'m'; el('e_rwa').textContent='$'+fmt(peakRWA,1)+'m'; el('e_rwa_s').textContent='$'+fmt(part,0)+'m × '+rw+'%';
+  el('e_nii_u').textContent='$'+fmtM(peakNII); el('e_nii_z').textContent='R'+fmtM(peakNII*usdZar);
+  el('e_rorwa').textContent=pct(rorwa); el('e_tgt_l').textContent=tgt;
+  el('e_lt_u').textContent='$'+fmtM(totalNII); el('e_lt_z').textContent='R'+fmtM(totalNII*usdZar);
+  // Spread verdict
+  el('e_req').textContent=fmt(req,0)+'bps';
+  const dc=deltaClass(delta);
+  el('e_delta').textContent=(delta>=0?'+':'')+fmt(delta,0)+'bps'; el('e_delta').className='sv-delta '+dc;
+  el('e_dsub').textContent=deltaLabel(delta); el('e_dsub').className='sv-dsub '+dc;
+  el('e_beven').textContent=fmt(beven,0)+'bps';
+  el('e_sens_detail').textContent=fmt(beven-ins,0)+'bps of insurance headroom at '+ins+'bps assumed.';
+  el('e_ins_badge').textContent=ins>0?'Insured · '+rw+'% RW':'Uninsured · '+rw+'% RW';
+  el('e_dc_sub').textContent='Marula Cell X · $'+fmt(part,0)+'m of $600m · 3-Tranche · Amortising';
+  // Table
+  const maxN=rows[0].nT;
+  el('e_tbody').innerHTML=rows.map(r=>{
+    const bw=maxN>0?Math.round(r.nT/maxN*50):0;
+    return`<tr><td>Year ${r.yr}</td><td>${r.o1>0?'$'+fmt(r.o1,1)+'m':'—'}</td><td>${r.o2>0?'$'+fmt(r.o2,1)+'m':'—'}</td><td>${r.o3>0?'$'+fmt(r.o3,1)+'m':'—'}</td><td>${r.n1>0?'$'+fmt(r.n1,2)+'m':'—'}</td><td>${r.n2>0?'$'+fmt(r.n2,2)+'m':'—'}</td><td>${r.n3>0?'$'+fmt(r.n3,2)+'m':'—'}</td><td class=&quot;bar-cell&quot;><span class=&quot;nii-bar&quot; style=&quot;width:${bw}px&quot;></span>$${fmt(r.nT,2)}m</td><td>R${fmtM(r.niiZar)}</td><td>$${fmt(r.avgRWA,1)}m</td><td>${pill(r.rorwaYr,tgt)}</td></tr>`;
+  }).join('');
+  el('e_tfoot').innerHTML=`<tr><td>Total NII</td><td></td><td></td><td></td><td></td><td></td><td></td><td><strong>$${fmt(tot,2)}m</strong></td><td><strong>R${fmtM(tot*usdZar)}</strong></td><td></td><td><strong>+$${fmt(upfront,2)}m fee</strong></td></tr>`;
+  // Comparison card
+  el('cc_e_notional').textContent=fmt(part,0);
+  el('cc_e_rorwa').textContent=pct(rorwa); el('cc_e_rorwa').style.color=colorForRoRWA(rorwa,tgt);
+  el('cc_e_nm').textContent=nm+'bps'; el('cc_e_rwa').textContent='$'+fmt(peakRWA,1)+'m';
+  el('cc_e_nii').textContent='$'+fmtM(peakNII)+' / R'+fmtM(peakNII*usdZar);
+  el('cc_e_req').textContent=fmt(req,0)+'bps';
+  el('cc_e_head').textContent=(delta>=0?'+':'')+fmt(delta,0)+'bps '+(delta>20?'✓':delta>0?'⚠':'✗');
+  el('cc_e_head').style.color=colorForRoRWA(delta,20);
+  el('cc_e_life').textContent='R'+fmtM(totalNII*usdZar);
+  renderCompTable();
+}
+
+// ── BGFI 70M ────────────────────────────────────────────────────────────
+function recalcB70(){
+  const notional=v('b7_n'),tenor=v('b7_t'),spread=v('b7_spread'),ins=v('b7_ins'),rw=v('b7_rw'),cof=v('g_cof'),usdZar=v('g_zar'),tgt=v('g_tgt'),fee=v('b7_fee');
+  const nm=spread-cof-ins, nii=notional*nm/10000, rwa=notional*rw/100;
+  const rorwa=rwa>0?(nii/rwa)*100:0;
+  const req=cof+ins+(tgt*rw), delta=spread-req;
+  const upfront=notional*fee/10000, totalNII=nii*tenor+upfront;
+  const beven=spread-cof-(tgt*rw);
+
+  el('b7_n_hdr').textContent='$'+fmt(notional,1)+'m'; el('b7_rw_hdr').textContent=rw+'%';
+  el('b7_wf_spread').textContent=spread+'bps'; el('b7_wf_cof').textContent=cof+'bps'; el('b7_wf_ins').textContent=ins+'bps';
+  el('b7_wf_net').textContent=nm+'bps'; el('b7_wf_net').className=nm>=0?'wf-v-res':'wf-v-neg';
+  el('b7_ead').textContent='$'+fmt(notional,1)+'m'; el('b7_rwa').textContent='$'+fmt(rwa,1)+'m'; el('b7_rwa_s').textContent='$'+fmt(notional,1)+'m × '+rw+'%';
+  el('b7_nii_u').textContent='$'+fmtM(nii); el('b7_nii_z').textContent='R'+fmtM(nii*usdZar);
+  el('b7_rorwa').textContent=pct(rorwa); el('b7_tgt_l').textContent=tgt;
+  el('b7_lt_u').textContent='$'+fmtM(totalNII); el('b7_lt_z').textContent='R'+fmtM(totalNII*usdZar);
+  el('b7_req').textContent=fmt(req,0)+'bps';
+  const dc=deltaClass(delta);
+  el('b7_delta').textContent=(delta>=0?'+':'')+fmt(delta,0)+'bps'; el('b7_delta').className='sv-delta '+dc;
+  el('b7_dsub').textContent=deltaLabel(delta); el('b7_dsub').className='sv-dsub '+dc;
+  el('b7_beven').textContent=fmt(beven,0)+'bps';
+  el('b7_ins_badge').textContent=ins>0?'Insured · '+rw+'% RW':'Uninsured · '+rw+'% RW';
+  let rows='',tot=0;
+  for(let yr=1;yr<=tenor;yr++){
+    rows+=`<tr><td>Year ${yr}</td><td>$${fmt(notional,1)}m</td><td><span class=&quot;nii-bar&quot; style=&quot;width:50px&quot;></span>$${fmt(nii,2)}m</td><td>R${fmtM(nii*usdZar)}</td><td>$${fmt(rwa,1)}m</td><td>${pill(rorwa,tgt)}</td></tr>`;
+    tot+=nii;
+  }
+  el('b7_tbody').innerHTML=rows;
+  el('b7_tfoot').innerHTML=`<tr><td>Total NII</td><td></td><td><strong>$${fmt(tot,2)}m</strong></td><td><strong>R${fmtM(tot*usdZar)}</strong></td><td></td><td><strong>+$${fmt(upfront,2)}m fee</strong></td></tr>`;
+  el('cc_b7_notional').textContent=fmt(notional,1);
+  el('cc_b7_rorwa').textContent=pct(rorwa); el('cc_b7_rorwa').style.color=colorForRoRWA(rorwa,tgt);
+  el('cc_b7_nm').textContent=nm+'bps'; el('cc_b7_rwa').textContent='$'+fmt(rwa,1)+'m';
+  el('cc_b7_nii').textContent='$'+fmtM(nii)+' / R'+fmtM(nii*usdZar);
+  el('cc_b7_req').textContent=fmt(req,0)+'bps';
+  el('cc_b7_head').textContent=(delta>=0?'+':'')+fmt(delta,0)+'bps '+(delta>20?'✓':delta>0?'⚠':'✗');
+  el('cc_b7_head').style.color=colorForRoRWA(delta,20);
+  el('cc_b7_life').textContent='R'+fmtM(totalNII*usdZar);
+  renderCompTable();
+}
+
+// ── BSO ─────────────────────────────────────────────────────────────────
+function recalcBSO(){
+  const notional=v('b3_n'),tenor=v('b3_t'),spread=v('b3_spread'),ins=v('b3_ins'),rw=v('b3_rw'),cof=v('g_cof'),usdZar=v('g_zar'),tgt=v('g_tgt'),fee=v('b3_fee');
+  const oc=v('b3_oc')/100, hc=v('b3_hc')/100, hfx=v('b3_hfx')/100;
+  const nm=spread-cof-ins;
+  const netC=1-hc-hfx, eadF=Math.max(0,1-oc*netC);
+  const eadFeur=Math.max(0,1-oc*(1-hc));
+  const numPmts=tenor*2;
+  const out=(sz,n,yr)=>yr<=0?sz:Math.max(0,sz*(1-Math.min(yr*2,n)/n));
+  const avgO=(sz,n,yr)=>(out(sz,n,yr-1)+out(sz,n,yr))/2;
+  let rowsData=[],tot=0;
+  for(let yr=1;yr<=tenor;yr++){
+    const avgN=avgO(notional,numPmts,yr), ead=avgN*eadF, nii=avgN*nm/10000, rwaYr=ead*rw/100;
+    const rorwaYr=rwaYr>0?(nii/rwaYr)*100:0;
+    rowsData.push({yr,avgN,ead,nii,niiZar:nii*usdZar,rwaYr,rorwaYr});
+    tot+=nii;
+  }
+  const yr1=rowsData[0]||{avgN:0,ead:0,nii:0,rwaYr:0,rorwaYr:0};
+  const rorwa=yr1.rwaYr>0?(yr1.nii/yr1.rwaYr)*100:0;
+  // BSO: RWA = EAD × RW, where EAD = notional × eadFactor
+  // So nm_needed = tgt × eadFactor × RW (not tgt × RW)
+  const req=cof+ins+(tgt*eadF*rw), delta=spread-req;
+  const upfront=notional*fee/10000, totalNII=tot+upfront;
+  const beven=spread-cof-(tgt*eadF*rw);
+
+  // Update EAD calc box
+  el('b3_ead_calc_box').innerHTML=`EAD = max(0, E − ${fmt(oc*100,0)}%E × (1 − ${fmt(hc*100,0)}% − ${fmt(hfx*100,0)}%))<br>Hc = ${fmt(hc*100,0)}% (BB-/Ba2 sovereign bonds, any tenor) · Hfx = ${fmt(hfx*100,0)}% (XOF vs EUR/USD)<br>EAD = E × (1 − ${fmt(oc,2)} × ${fmt(netC,2)}) = <strong>${fmt(eadF*100,1)}% × notional</strong>`;
+  el('b3_ead_pct_hdr').textContent=fmt(eadF*100,1)+'%';
+  el('b3_n_hdr').textContent='$'+fmt(notional,1)+'m';
+  el('b3_wf_spread').textContent=spread+'bps'; el('b3_wf_cof').textContent=cof+'bps';
+  el('b3_wf_ins').textContent=ins>0?ins+'bps':'nil'; el('b3_wf_ins').style.color=ins>0?'var(--red)':'var(--muted)';
+  const nilflag=ins===0;
+  el('b3_wf_ins').parentElement.className='wf-r'+(nilflag?' wf-nil':'');
+  el('b3_wf_net').textContent=nm+'bps'; el('b3_wf_net').className=nm>0?'wf-v-bron':'wf-v-neg';
+  el('b3_ead').textContent='$'+fmt(yr1.ead,2)+'m'; el('b3_ead_s').textContent=fmt(eadF*100,1)+'% × $'+fmt(yr1.avgN,2)+'m avg';
+  el('b3_rwa').textContent='$'+fmt(yr1.rwaYr,2)+'m'; el('b3_rwa_s').textContent='$'+fmt(yr1.ead,2)+'m × '+rw+'%';
+  el('b3_nii_u').textContent='$'+fmtM(yr1.nii); el('b3_nii_z').textContent='R'+fmtM(yr1.nii*usdZar);
+  el('b3_rorwa').textContent=pct(rorwa);
+  el('b3_lt_u').textContent='$'+fmtM(totalNII); el('b3_lt_z').textContent='R'+fmtM(totalNII*usdZar);
+  el('b3_req').textContent=fmt(req,0)+'bps';
+  const dc=deltaClass(delta);
+  el('b3_delta').textContent=(delta>=0?'+':'')+fmt(delta,0)+'bps'; el('b3_delta').className='sv-delta '+dc;
+  el('b3_dsub').textContent=deltaLabel(delta); el('b3_dsub').className='sv-dsub '+dc;
+  el('b3_beven').textContent=fmt(beven,0)+'bps'; el('b3_eur_ead').textContent=fmt(eadFeur*100,2)+'%';
+  // Update explanation note
+  const nmNeeded=tgt*eadF*rw;
+  el('b3_ead_factor_note').textContent=fmt(eadF*100,1)+'%';
+  if(el('b3_ead_factor_note2')) el('b3_ead_factor_note2').textContent=fmt(eadF*100,1)+'%';
+  if(el('b3_nm_needed_note2')) el('b3_nm_needed_note2').textContent=fmt(nmNeeded,0)+'bps';
+  el('b3_rw_note').textContent=rw;
+  el('b3_nm_needed_note').textContent='~'+fmt(nmNeeded,0)+'bps';
+  el('b3_req_note').textContent=fmt(req,0)+'bps';
+  el('b3_eff_rwa_note').textContent=fmt(eadF*rw,1)+'%';
+  el('b3_ins_badge').textContent=ins>0?'Insured · '+rw+'% RW':'Uninsured · '+rw+'% RW · EAD '+fmt(eadF*100,1)+'%';
+  el('b3_ins_badge').className='dc-ins-badge '+(ins>0?'ins-y':'ins-n');
+  el('b3_tbody').innerHTML=rowsData.map(r=>{
+    return`<tr><td>Year ${r.yr}</td><td>$${fmt(r.avgN,2)}m</td><td>$${fmt(r.ead,2)}m</td><td><span class=&quot;nii-bar&quot; style=&quot;width:${Math.round(r.nii/rowsData[0].nii*50)}px&quot;></span>$${fmt(r.nii,2)}m</td><td>R${fmtM(r.niiZar)}</td><td>$${fmt(r.rwaYr,2)}m</td><td>${pill(r.rorwaYr,tgt)}</td></tr>`;
+  }).join('');
+  el('b3_tfoot').innerHTML=`<tr><td>Total NII</td><td></td><td></td><td><strong>$${fmt(tot,2)}m</strong></td><td><strong>R${fmtM(tot*usdZar)}</strong></td><td></td><td><strong>+$${fmt(upfront,2)}m fee</strong></td></tr>`;
+  el('cc_b3_notional').textContent=fmt(notional,1);
+  el('cc_b3_rorwa').textContent=pct(rorwa); el('cc_b3_rorwa').style.color=colorForRoRWA(rorwa,tgt);
+  el('cc_b3_nm').textContent=nm+'bps'; el('cc_b3_rwa').textContent='$'+fmt(yr1.rwaYr,2)+'m';
+  el('cc_b3_nii').textContent='$'+fmtM(yr1.nii)+' / R'+fmtM(yr1.nii*usdZar);
+  el('cc_b3_req').textContent=fmt(req,0)+'bps';
+  el('cc_b3_head').textContent=(delta>=0?'+':'')+fmt(delta,0)+'bps '+(delta>20?'✓':delta>0?'⚠':'✗');
+  el('cc_b3_head').style.color=colorForRoRWA(delta,20);
+  el('cc_b3_life').textContent='R'+fmtM(totalNII*usdZar);
+  renderCompTable();
+}
+
+// ── COMPARISON TABLE (order follows card DOM order) ─────────────────────
+function getVisibleDeals(){
+  // Return ordered array of deal ids that are currently shown
+  return [...document.querySelectorAll('.cc:not(.cc-hidden)')]
+    .map(c=>c.dataset.deal);
+}
+
+function dealData(d){
+  const cof=v('g_cof'), usdZar=v('g_zar'), tgt=v('g_tgt');
+  if(d==='ebid'){
+    const{rows,tot}=ebidRows();
+    const part=v('e_part'),spread=v('e_spread'),ins=v('e_ins'),rw=v('e_rw'),fee=v('e_fee');
+    const nm=spread-cof-ins, peakNII=part*nm/10000, peakRWA=part*rw/100;
+    const rorwa=peakRWA>0?(peakNII/peakRWA)*100:0;
+    const req=cof+ins+(tgt*rw), delta=spread-req;
+    const upfront=part*fee/10000, totalNII=tot+upfront;
+    return{label:'EBID $'+fmt(part,0)+'m',color:'var(--bronze)',
+      type:'Pass-through note', repay:'Amortising · 3 tranches', collateral:'None',
+      ead:'100% notional', ins:ins>0?'Yes · '+ins+'bps':'None',
+      spread:spread+'bps', cof:'('+cof+'bps)', inscost:ins>0?'('+ins+'bps)':'nil', nm:nm+'bps',
+      rw:rw+'%', peakRWA:'$'+fmt(peakRWA,1)+'m', peakNII:'$'+fmtM(peakNII),
+      peakNIIz:'R'+fmtM(peakNII*usdZar), lifetime:'$'+fmtM(totalNII), lifetimez:'R'+fmtM(totalNII*usdZar),
+      rorwa:pct(rorwa), rorwaRaw:rorwa, req:fmt(req,0)+'bps',
+      head:(delta>=0?'+':'')+fmt(delta,0)+'bps', headRaw:delta,
+      beven:'≤'+fmt(spread-cof-(tgt*rw),0)+'bps'};
+  }
+  if(d==='b70'){
+    const notional=v('b7_n'),tenor=v('b7_t'),spread=v('b7_spread'),ins=v('b7_ins'),rw=v('b7_rw'),fee=v('b7_fee');
+    const nm=spread-cof-ins, nii=notional*nm/10000, rwa=notional*rw/100;
+    const rorwa=rwa>0?(nii/rwa)*100:0;
+    const req=cof+ins+(tgt*rw), delta=spread-req;
+    const upfront=notional*fee/10000, totalNII=nii*tenor+upfront;
+    return{label:'BGFI CI $'+fmt(notional,1)+'m',color:'var(--navy-mid)',
+      type:'TRS / Secured loan', repay:'Revolving bullet', collateral:'Warehouse receipts ⚠',
+      ead:'100% notional', ins:ins>0?'Yes · '+ins+'bps':'None',
+      spread:spread+'bps', cof:'('+cof+'bps)', inscost:ins>0?'('+ins+'bps)':'nil', nm:nm+'bps',
+      rw:rw+'%', peakRWA:'$'+fmt(rwa,1)+'m', peakNII:'$'+fmtM(nii),
+      peakNIIz:'R'+fmtM(nii*usdZar), lifetime:'$'+fmtM(totalNII), lifetimez:'R'+fmtM(totalNII*usdZar),
+      rorwa:pct(rorwa), rorwaRaw:rorwa, req:fmt(req,0)+'bps',
+      head:(delta>=0?'+':'')+fmt(delta,0)+'bps', headRaw:delta,
+      beven:'≤'+fmt(spread-cof-(tgt*rw),0)+'bps ⚠'};
+  }
+  if(d==='bso'){
+    const notional=v('b3_n'),tenor=v('b3_t'),spread=v('b3_spread'),ins=v('b3_ins'),rw=v('b3_rw'),fee=v('b3_fee');
+    const oc=v('b3_oc')/100, hc=v('b3_hc')/100, hfx=v('b3_hfx')/100;
+    const nm=spread-cof-ins, netC=1-hc-hfx, eadF=Math.max(0,1-oc*netC);
+    const numPmts=tenor*2;
+    const out=(sz,n,yr)=>yr<=0?sz:Math.max(0,sz*(1-Math.min(yr*2,n)/n));
+    const avgO=(sz,n,yr)=>(out(sz,n,yr-1)+out(sz,n,yr))/2;
+    const avgN1=avgO(notional,numPmts,1), ead1=avgN1*eadF, nii1=avgN1*nm/10000, rwa1=ead1*rw/100;
+    const rorwa=rwa1>0?(nii1/rwa1)*100:0;
+    let tot=0;
+    for(let yr=1;yr<=tenor;yr++)tot+=avgO(notional,numPmts,yr)*nm/10000;
+    // BSO: req uses eadFactor because RWA = EAD×RW not Notional×RW
+    const req=cof+ins+(tgt*eadF*rw), delta=spread-req;
+    const upfront=notional*fee/10000, totalNII=tot+upfront;
+    return{label:'BGFI BSO $'+fmt(notional,1)+'m',color:'var(--teal)',
+      type:'BSO / TRS', repay:'Amortising · 10 semi-annual', collateral:'CI bonds 120% OC ✓',
+      ead:fmt(eadF*100,1)+'% of notional ★', ins:'None',
+      spread:spread+'bps', cof:'('+cof+'bps)', inscost:'nil', nm:nm+'bps',
+      rw:rw+'% (on EAD)', peakRWA:'$'+fmt(rwa1,2)+'m (Yr 1)', peakNII:'$'+fmtM(nii1),
+      peakNIIz:'R'+fmtM(nii1*usdZar), lifetime:'$'+fmtM(totalNII), lifetimez:'R'+fmtM(totalNII*usdZar),
+      rorwa:pct(rorwa), rorwaRaw:rorwa, req:fmt(req,0)+'bps',
+      head:(delta>=0?'+':'')+fmt(delta,0)+'bps', headRaw:delta,
+      beven:'N/A (uninsured) · req. from EAD compression'};
+  }
+}
+
+function renderCompTable(){
+  const deals=getVisibleDeals();
+  if(!deals.length){
+    el('comp-thead').innerHTML='<tr><th>Metric</th></tr>';
+    el('comp-tbody').innerHTML='';
+    return;
+  }
+  const data=deals.map(d=>dealData(d));
+  const tgt=v('g_tgt');
+  // Header
+  const thCols=deals.map((d,i)=>{
+    const colors={ebid:'var(--bronze)',b70:'var(--navy-mid)',bso:'var(--teal)'};
+    return`<th style=&quot;color:${colors[d]}&quot;>${data[i].label}</th>`;
+  }).join('');
+  el('comp-thead').innerHTML=`<tr><th style=&quot;text-align:left;width:180px&quot;>Metric</th>${thCols}</tr>`;
+
+  const rows=[
+    {sec:'Structure'},
+    {k:'Deal type', fn:d=>d.type},
+    {k:'Repayment', fn:d=>d.repay},
+    {k:'Collateral', fn:d=>d.collateral},
+    {k:'EAD basis', fn:d=>d.ead},
+    {k:'Insurance', fn:d=>d.ins},
+    {sec:'Margin Waterfall'},
+    {k:'Deal spread', fn:d=>d.spread},
+    {k:'Cost of funds', fn:d=>d.cof},
+    {k:'Insurance cost', fn:d=>d.inscost},
+    {k:'Net margin', fn:d=>d.nm, hl:true},
+    {sec:'Capital'},
+    {k:'Risk weight', fn:d=>d.rw},
+    {k:'Peak RWA', fn:d=>d.peakRWA, hl:true},
+    {sec:'Income'},
+    {k:'Peak NII (USD)', fn:d=>d.peakNII},
+    {k:'Peak NII (ZAR)', fn:d=>d.peakNIIz, hl:true},
+    {k:'Lifetime NII (USD)', fn:d=>d.lifetime},
+    {k:'Lifetime NII (ZAR)', fn:d=>d.lifetimez, hl:true},
+    {sec:'Returns'},
+    {k:'RoRWA', fn:d=>`<span style=&quot;font-weight:500;color:${colorForRoRWA(d.rorwaRaw,tgt)}&quot;>${d.rorwa}</span>`, hl:true},
+    {k:'Required spread @ '+tgt+'%', fn:d=>d.req},
+    {k:'Headroom', fn:d=>`<span style=&quot;color:${colorForRoRWA(d.headRaw,20)};font-weight:500&quot;>${d.head}</span>`, hl:true},
+    {k:'Insurance break-even', fn:d=>d.beven},
+   ];
+
+  el('comp-tbody').innerHTML=rows.map(r=>{
+    if(r.sec) return`<tr class=&quot;ctr-sec&quot;><td colspan=&quot;${deals.length+1}&quot;>${r.sec}</td></tr>`;
+    const cells=data.map(d=>`<td>${r.fn(d)}</td>`).join('');
+    return`<tr${r.hl?' class=&quot;ctr-hl&quot;':''}><td>${r.k}</td>${cells}</tr>`;
+  }).join('');
+}
+
+// ── SHOW/HIDE — affects BOTH cards and table ─────────────────────────────
+function toggleDeal(pill){
+  pill.classList.toggle('on');
+  const deal=pill.dataset.deal;
+  const card=document.querySelector(`.cc[data-deal=&quot;${deal}&quot;]`);
+  if(card) card.classList.toggle('cc-hidden',!pill.classList.contains('on'));
+  const visible=document.querySelectorAll('.cc:not(.cc-hidden)').length;
+  el('comp-row').style.gridTemplateColumns=`repeat(${Math.max(1,visible)},1fr)`;
+  renderCompTable();
+}
+
+// ── DRAG AND DROP — cards + table reorder together ───────────────────────
+let dragSrc=null;
+document.addEventListener('DOMContentLoaded',()=>{
+  const row=el('comp-row');
+  row.addEventListener('dragstart',e=>{
+    const c=e.target.closest('.cc'); if(!c)return;
+    dragSrc=c; c.classList.add('dragging'); e.dataTransfer.effectAllowed='move';
+  });
+  row.addEventListener('dragend',()=>{
+    document.querySelectorAll('.cc').forEach(c=>c.classList.remove('dragging','over'));
+    dragSrc=null; renderCompTable();
+  });
+  row.addEventListener('dragover',e=>{
+    e.preventDefault();
+    const c=e.target.closest('.cc'); if(!c||c===dragSrc)return;
+    document.querySelectorAll('.cc').forEach(x=>x.classList.remove('over'));
+    c.classList.add('over');
+  });
+  row.addEventListener('drop',e=>{
+    e.preventDefault();
+    const target=e.target.closest('.cc'); if(!target||target===dragSrc)return;
+    target.classList.remove('over');
+    const cards=[...row.querySelectorAll('.cc')];
+    if(cards.indexOf(dragSrc)<cards.indexOf(target)) row.insertBefore(dragSrc,target.nextSibling);
+    else row.insertBefore(dragSrc,target);
+    renderCompTable();
+  });
+});
+
+// ── RECALC ALL ───────────────────────────────────────────────────────────
+function recalcAll(){
+  document.querySelectorAll('[id$=&quot;_tgt_l&quot;]').forEach(e=>e.textContent=v('g_tgt'));
+  document.querySelectorAll('.sv-tgt-lbl').forEach(e=>e.textContent=v('g_tgt'));
+  syncGlobalIns();
+  recalcEBID(); recalcB70(); recalcBSO();
+}
+
+// ── INIT ─────────────────────────────────────────────────────────────────
+el('footer_date').textContent='Updated '+new Date().toLocaleDateString('en-ZA',{day:'numeric',month:'short',year:'numeric'});
+recalcAll();
+</script>
+</body>
+</html>
+"></iframe></div>
     <div class="view" id="v-p1model">
       <iframe style="width:100%;height:calc(100vh - var(--th));border:none" srcdoc="<!DOCTYPE html>
 <html lang=&quot;en&quot;>
