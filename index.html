@@ -339,7 +339,43 @@ textarea.fi{resize:vertical;min-height:72px}
   .pnav{grid-template-columns:repeat(2,1fr)}
   .stages{grid-template-columns:1fr}
   .coblock{grid-template-columns:1fr}
+  .dbk-met{gap:1rem}
 }
+/* ── DASHBOARD / DEAL BOOK ─────────────────────────────────────────────── */
+.dbk-hero{position:relative;overflow:hidden;border-radius:var(--r);padding:1.6rem 1.85rem;margin-bottom:1.5rem;background:linear-gradient(120deg,var(--bronze),var(--bronzed));box-shadow:var(--sl)}
+.dbk-hero h2{font-family:var(--serif);font-size:1.7rem;font-weight:400;color:#fff;margin-bottom:.25rem;position:relative;z-index:1}
+.dbk-hero p{font-size:.84rem;color:rgba(255,255,255,.88);position:relative;z-index:1}
+.dbk-spark{position:absolute;right:-40px;top:-40px;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,.09)}
+.dbk-spark::after{content:"";position:absolute;right:70px;top:90px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.06)}
+.dbk-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.875rem;margin-bottom:1.25rem}
+.dbk-stat{background:var(--paper);border:1px solid var(--paper3);border-radius:var(--r);padding:1rem 1.1rem}
+.dbk-stat .l{font-size:.66rem;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--ink4);margin-bottom:.3rem}
+.dbk-stat .v{font-family:var(--serif);font-size:1.75rem;color:var(--ink);line-height:1}
+.dbk-stat .s{font-size:.72rem;color:var(--ink3);margin-top:.2rem}
+.dbk-stagewrap{margin-bottom:1.75rem}
+.dbk-stagebar{display:flex;height:10px;border-radius:99px;overflow:hidden;background:var(--paper3);gap:2px}
+.dbk-stagebar>div{transition:width .5s}
+.dbk-legend{display:flex;flex-wrap:wrap;gap:.9rem;margin-top:.5rem;font-size:.7rem;color:var(--ink3)}
+.dbk-legend span{display:flex;align-items:center;gap:.35rem}
+.dbk-legend i{width:8px;height:8px;border-radius:2px;display:inline-block}
+.dbk-grp{margin-bottom:1.5rem}
+.dbk-grp-h{display:flex;align-items:center;gap:.55rem;margin-bottom:.7rem}
+.dbk-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.dbk-grp-t{font-family:var(--serif);font-size:1.1rem;color:var(--ink)}
+.dbk-grp-m{font-size:.74rem;color:var(--ink3);margin-left:auto;text-align:right}
+.dbk-card{background:var(--paper);border:1px solid var(--paper3);border-left-width:3px;border-radius:var(--r);padding:.85rem 1.05rem;margin-bottom:.55rem;cursor:pointer;transition:box-shadow .2s,transform .1s}
+.dbk-card:hover{box-shadow:var(--slg);transform:translateY(-1px)}
+.dbk-top{display:flex;align-items:flex-start;gap:.6rem;margin-bottom:.65rem}
+.dbk-name{font-size:.92rem;font-weight:600;color:var(--ink);line-height:1.3}
+.dbk-na{font-size:.74rem;color:var(--ink3);margin-top:.15rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:46ch}
+.dbk-chip{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:.2rem .55rem;border-radius:99px;white-space:nowrap;flex-shrink:0;background:var(--paper2)}
+.dbk-met{display:flex;align-items:flex-end;gap:1.75rem}
+.dbk-met .m{display:flex;flex-direction:column;gap:.15rem}
+.dbk-met .mk{font-size:.6rem;text-transform:uppercase;letter-spacing:.06em;color:var(--ink4)}
+.dbk-met .mv{font-size:1.05rem;font-weight:500;color:var(--ink);font-family:var(--serif);line-height:1}
+.dbk-prog{flex:1;min-width:130px}
+.dbk-prog-bar{height:6px;border-radius:99px;background:var(--paper3);overflow:hidden;margin-top:.3rem}
+.dbk-prog-f{height:100%;border-radius:99px;transition:width .5s}
 </style>
 </head>
 <body>
@@ -597,7 +633,7 @@ textarea.fi{resize:vertical;min-height:72px}
         <option value="other">Other</option>
       </select></div>
       <div class="fg"><label class="fl">Est. deal size (USD m)</label><input class="fi" type="number" id="o-size" placeholder="e.g. 50" min="0"></div>
-      <div class="fg"><label class="fl">Est. fee (bps of facility)</label><input class="fi" type="number" id="o-fee" placeholder="e.g. 25" step="1" min="0"></div>
+      <div class="fg"><label class="fl">Est. fee (% of facility)</label><input class="fi" type="number" id="o-fee" placeholder="e.g. 0.25" step="0.01" min="0"></div>
       <div class="fg"><label class="fl">Est. months to close</label><input class="fi" type="number" id="o-months" placeholder="e.g. 6" min="0"></div>
       <div class="fg"><label class="fl">Date first introduced</label><input class="fi" type="date" id="o-idate"></div>
       <div class="fg"><label class="fl">Next action due date</label><input class="fi" type="date" id="o-nadate"></div>
@@ -960,80 +996,57 @@ window.toggleSB=()=>document.getElementById('sbar').classList.toggle('open');
 
 /* ── DASHBOARD ─────────────────────────────────────────────────────────── */
 function renderDash(){
-  const total=decs.length,decided=decs.filter(d=>d.status==='decided').length;
-  const open=decs.filter(d=>d.status==='open').length;
-  const pct=total?Math.round(decided/total*100):0;
-  const phases=[1,2,3,4],pn=['Foundation','Mandate readiness','First close','Scale & franchise'];
-  const pp=a=>a.length?Math.round(a.filter(d=>d.status==='decided').length/a.length*100):0;
-  const recent=[...coms].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)).slice(0,5);
-  const urgent=decs.filter(d=>d.priority==='must'&&d.status!=='decided').slice(0,4);
-  const activeOpps=opps.filter(o=>!['passed','on_hold'].includes(o.stage));
-  const today=new Date();
-  const poDue=new Date('2026-06-13');const poDays=Math.ceil((poDue-today)/(1000*60*60*24));
-  const irokoDeals=opps.filter(o=>o.iroko_relevant&&!['passed','on_hold'].includes(o.stage));
-  const advisoryDeals=opps.filter(o=>parseInt(o.pillar)===3&&!['passed','on_hold'].includes(o.stage));
-  const sumIroko=irokoDeals.reduce((s,o)=>s+(parseFloat(o.estimated_size)||0),0);
+  const active=opps.filter(o=>!['passed','on_hold'].includes(o.stage));
+  const totNotional=active.reduce((s,o)=>s+(parseFloat(o.estimated_size)||0),0);
+  const totValue=active.reduce((s,o)=>s+dealFee(o),0);
+  const nearClose=active.filter(o=>dealCompletion(o)>=60).length;
+  const PMETA={1:{n:'Pillar 1 — Iroko origination',c:'var(--bronze)'},2:{n:'Pillar 2 — Portable alpha',c:'var(--teal)'},3:{n:'Pillar 3 — Corporate finance advisory',c:'var(--green)'},4:{n:'Pillar 4 — Corporate risk management',c:'var(--blue)'}};
+  const groups=[1,2,3,4].map(p=>({p,items:active.filter(o=>parseInt(o.pillar)===p).sort((a,b)=>dealCompletion(b)-dealCompletion(a))})).filter(g=>g.items.length);
+  const stages=['idea','qualifying','developing','ready'];const stTot=active.length||1;
+  const pcColor=pc=>pc>=75?'var(--green)':pc>=40?'var(--amber)':'var(--ink4)';
   document.getElementById('v-dashboard').innerHTML=`
-  <div class="pgh"><div class="pgt">Dashboard</div><div class="pgs">Resgro Capital &mdash; sole-director operating overview</div></div>
-  <div class="psec" style="background:var(--bronzel);border-color:var(--bronze)">
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap">
-      <div>
-        <div style="font-family:var(--serif);font-size:1.2rem;color:var(--bronzed);margin-bottom:.3rem">Resgro Capital (Pty) Ltd</div>
-        <div style="font-size:.82rem;color:var(--bronzed);line-height:1.6">CIPC 2026/377574/07 &middot; SARS 9670237206 &middot; Director &amp; sole shareholder: Aphile Molefe<br>Registered office: 99 10th Street, Parkmore, Gauteng 2191</div>
+  <div class="dbk-hero">
+    <div class="dbk-spark"></div>
+    <h2>Live deal book</h2>
+    <p>${active.length} active ${active.length===1?'opportunity':'opportunities'} &middot; ${fmtUSD(totNotional)} notional &middot; ${fmtUSD(totValue)} in fee value</p>
+  </div>
+  <div class="dbk-stats">
+    <div class="dbk-stat"><div class="l">Live opportunities</div><div class="v">${active.length}</div><div class="s">across ${groups.length} pillar${groups.length===1?'':'s'}</div></div>
+    <div class="dbk-stat"><div class="l">Total deal value</div><div class="v" style="color:var(--bronzed)">${fmtUSD(totValue)}</div><div class="s">gross fee at 100%</div></div>
+    <div class="dbk-stat"><div class="l">Total notional</div><div class="v" style="color:var(--blue)">${fmtUSD(totNotional)}</div><div class="s">facility size</div></div>
+    <div class="dbk-stat"><div class="l">Near close</div><div class="v" style="color:var(--green)">${nearClose}</div><div class="s">60%+ complete</div></div>
+  </div>
+  <div class="dbk-stagewrap">
+    <div class="dbk-stagebar">${stages.map(s=>{const n=active.filter(o=>o.stage===s).length;return n?`<div title="${STL[s]}: ${n}" style="width:${n/stTot*100}%;background:${STC[s]}"></div>`:'';}).join('')}</div>
+    <div class="dbk-legend">${stages.map(s=>{const n=active.filter(o=>o.stage===s).length;return`<span><i style="background:${STC[s]}"></i>${STL[s]} ${n}</span>`;}).join('')}</div>
+  </div>
+  ${groups.map(g=>{const gv=g.items.reduce((s,o)=>s+dealFee(o),0);return`
+  <div class="dbk-grp">
+    <div class="dbk-grp-h">
+      <span class="dbk-dot" style="background:${PMETA[g.p].c}"></span>
+      <span class="dbk-grp-t">${PMETA[g.p].n}</span>
+      <span class="dbk-grp-m">${g.items.length} deal${g.items.length===1?'':'s'} &middot; ${fmtUSD(gv)} value</span>
+    </div>
+    ${g.items.map(o=>{const pc=dealCompletion(o);const col=pcColor(pc);const sz=parseFloat(o.estimated_size)||0;const fee=dealFee(o);return`
+    <div class="dbk-card" style="border-left-color:${PMETA[g.p].c}" onclick="goV('opportunities',document.querySelectorAll('.si')[5])">
+      <div class="dbk-top">
+        <div style="flex:1;min-width:0">
+          <div class="dbk-name">${o.title}</div>
+          ${o.next_action?`<div class="dbk-na">&#8594; ${o.next_action}</div>`:''}
+        </div>
+        <span class="dbk-chip" style="color:${STC[o.stage]}">${STL[o.stage]}</span>
       </div>
-      <button class="btns" style="border-color:var(--bronze);color:var(--bronzed);background:var(--paper)" onclick="goV('company',document.querySelectorAll('.si')[1])">View company details &rarr;</button>
-    </div>
-  </div>
-  <div class="stats">
-    <div class="stat"><div class="slb">Decisions</div><div class="sv">${total}</div><div class="ss">${pct}% resolved</div></div>
-    <div class="stat"><div class="slb">Open / Must</div><div class="sv" style="color:var(--red)">${urgent.length}</div><div class="ss">priority items</div></div>
-    <div class="stat"><div class="slb">Live opps</div><div class="sv" style="color:var(--blue)">${activeOpps.length}</div><div class="ss">across pillars</div></div>
-    <div class="stat"><div class="slb">Iroko book</div><div class="sv" style="color:var(--teal)">$${Math.round(sumIroko)}m</div><div class="ss">${irokoDeals.length} mandates</div></div>
-    <div class="stat"><div class="slb">P3 advisory</div><div class="sv" style="color:var(--bronzed)">${advisoryDeals.length}</div><div class="ss">active mandates</div></div>
-    <div class="stat"><div class="slb">Public Officer</div><div class="sv" style="color:${poDays<=14?'var(--red)':poDays<=30?'var(--amber)':'var(--green)'}">${poDays}d</div><div class="ss">to 13 Jun 2026</div></div>
-  </div>
-  <div class="psec">
-    <div class="phd"><div class="ptitle">Operating phase progress</div><div class="ppct">${pct}%</div></div>
-    <div class="pbar"><div class="pf pf-g" style="width:${pct}%"></div></div>
-    <div class="pphases">
-      ${phases.map((p,i)=>{const items=decs.filter(x=>x.phase===p);const pc=pp(items);return`<div><div class="ppl">Phase ${p} &mdash; ${pn[i]} (${pc}%)</div><div class="pbar"><div class="pf ${['pf-g','pf-t','pf-gn','pf-g'][i]}" style="width:${pc}%"></div></div></div>`;}).join('')}
-    </div>
-  </div>
-  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.5rem">
-    <div>
-      <div style="font-family:var(--serif);font-size:1.05rem;margin-bottom:.875rem">Priority decisions</div>
-      ${urgent.map(d=>`<div style="display:flex;align-items:flex-start;gap:.75rem;padding:.65rem 0;border-bottom:1px solid var(--paper3);cursor:pointer" onclick="goV('decisions',document.querySelectorAll('.si')[2]);setTimeout(()=>openCard('${d.id}'),80)">
-        <div class="dpr pm" style="flex-shrink:0">!</div>
-        <div style="flex:1"><div style="font-size:.84rem;font-weight:600;color:var(--ink)">${d.title}</div><div style="font-size:.75rem;color:var(--ink3)">Phase ${d.phase}</div></div>
-        <span class="sb2 so" style="flex-shrink:0">Open</span>
-      </div>`).join('')}
-      ${!urgent.length?'<div class="empty"><div class="empi">&#10003;</div><div class="empt">All must-decide items resolved</div></div>':''}
-    </div>
-    <div>
-      <div style="font-family:var(--serif);font-size:1.05rem;margin-bottom:.875rem">Active opportunities</div>
-      ${activeOpps.slice(0,6).map(o=>{
-        const lhT={high:'var(--green)',medium:'var(--amber)',low:'var(--red)',uncertain:'var(--ink4)'}[o.likelihood]||'var(--ink4)';
-        return`<div style="display:flex;align-items:flex-start;gap:.75rem;padding:.65rem 0;border-bottom:1px solid var(--paper3);cursor:pointer" onclick="goV('opportunities',document.querySelectorAll('.si')[5])">
-          <div style="width:8px;height:8px;border-radius:50%;background:${lhT};flex-shrink:0;margin-top:5px"></div>
-          <div style="flex:1;min-width:0"><div style="font-size:.84rem;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${o.title}</div>
-          <div style="font-size:.75rem;color:var(--ink3)">${pillarShort(o.pillar)} &bull; ${stageLabel(o.stage)}</div></div>
-          ${o.estimated_size?`<div style="font-size:.75rem;color:var(--ink3);flex-shrink:0">$${o.estimated_size}m</div>`:''}
-        </div>`;
-      }).join('')}
-      ${!activeOpps.length?'<div class="empty"><div class="empi">&#9670;</div><div class="empt">No active opportunities</div></div>':''}
-    </div>
-    <div>
-      <div style="font-family:var(--serif);font-size:1.05rem;margin-bottom:.875rem">Recent activity</div>
-      ${recent.map(c=>{
-        const d=decs.find(x=>x.id===c.decision_id);
-        return`<div style="padding:.55rem 0;border-bottom:1px solid var(--paper3)">
-          <div style="font-size:.75rem;color:var(--ink4);margin-bottom:.15rem">on <em>${d?.title||'a decision'}</em></div>
-          <div style="font-size:.8rem;color:var(--ink2)">${c.content.substring(0,100)}${c.content.length>100?'&hellip;':''}</div>
-        </div>`;
-      }).join('')}
-      ${!recent.length?'<div class="empty"><div class="empi">&#128172;</div><div class="empt">No comments yet</div></div>':''}
-    </div>
-  </div>`;
+      <div class="dbk-met">
+        <div class="m"><span class="mk">Deal size</span><span class="mv">${sz?fmtUSD(sz):'&mdash;'}</span></div>
+        <div class="m"><span class="mk">Deal value</span><span class="mv" style="color:var(--bronzed)">${fee>0?fmtUSD(fee):'&mdash;'}</span></div>
+        <div class="dbk-prog">
+          <div style="display:flex;justify-content:space-between;font-size:.62rem;color:var(--ink4)"><span>Completion</span><span style="color:${col};font-weight:700">${pc}%</span></div>
+          <div class="dbk-prog-bar"><div class="dbk-prog-f" style="width:${pc}%;background:${col}"></div></div>
+        </div>
+      </div>
+    </div>`;}).join('')}
+  </div>`;}).join('')}
+  ${!active.length?'<div class="empty"><div class="empi">&#9670;</div><div class="empt">No live opportunities</div><div class="empd">Add a deal in the Opportunities view to see it here</div></div>':''}`;
 }
 
 /* ── COMPANY VIEW ──────────────────────────────────────────────────────── */
@@ -1283,6 +1296,22 @@ function dealStalled(o){
   const t=new Date(o.last_activity).getTime();
   return isFinite(t)&&(Date.now()-t)>30*864e5; /* no movement in 30+ days */
 }
+/* % to completion. Milestone-driven where set, else stage. Per-pillar maps so
+   P3 (and others) can carry a bespoke milestone vocabulary — drop the P3 set
+   into MILESTONE_PCT[3] when supplied; pillars without a custom map use the
+   generic Iroko ladder. */
+const MILESTONE_PCT={
+  generic:{engaged:10,eoi:20,assessing:60,approved:100},
+  /* 3:{ ...bespoke P3 advisory milestones... } */
+};
+const STAGE_PCT={idea:5,qualifying:25,developing:60,ready:90,on_hold:0,passed:0};
+function dealCompletion(o){
+  const map=MILESTONE_PCT[parseInt(o.pillar)]||MILESTONE_PCT.generic;
+  if(o.execution_milestone==='custom'&&o.execution_prob!=null)
+    return Math.max(0,Math.min(100,Math.round(parseFloat(o.execution_prob)||0)));
+  if(o.execution_milestone&&map[o.execution_milestone]!=null)return map[o.execution_milestone];
+  return STAGE_PCT[o.stage]!=null?STAGE_PCT[o.stage]:0;
+}
 function dealFee(o){return (parseFloat(o.estimated_size)||0)*(parseFloat(o.estimated_fee_pct)||0)/100;} /* $m */
 function fmtUSD(x){
   if(x>=1000)return '$'+(x/1000).toFixed(x>=10000?0:1)+'bn';
@@ -1472,7 +1501,7 @@ window.submitOpp=async()=>{
   if(id)await sb.from('opportunities').update(row).eq('id',id);
   else await sb.from('opportunities').insert(row);
   const{data}=await sb.from('opportunities').select('*').order('created_at',{ascending:false});opps=(data||[]).filter(x=>!x.title.startsWith('__seed_v'));
-  window.closeOppModal();renderOppKanban();renderOpps();updBadge();toast(id?'Opportunity updated':'Opportunity added','ok');
+  window.closeOppModal();renderOppKanban();renderOpps();renderDash();updBadge();toast(id?'Opportunity updated':'Opportunity added','ok');
 };
 window.updOppStage=async(id,stage)=>{
   const last_activity=new Date().toISOString();
