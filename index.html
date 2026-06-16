@@ -26,6 +26,41 @@
   --sans:"DM Sans",system-ui,sans-serif;
   --nw:240px;--th:56px;
 }
+/* ── DARK THEME ──────────────────────────────────────────────────────────────
+   Lifts the P1 model palette into the main app. The app is built almost
+   entirely on the CSS variables above, so dark mode is mostly a variable
+   re-map. The handful of components that use --ink as a *background*
+   (nav, primary buttons, active states, loader/auth, toast) are inverted,
+   so they get explicit overrides below. */
+:root[data-theme="dark"]{
+  --ink:#EDE8E0;--ink2:#C9C4D0;--ink3:#9A97A8;--ink4:#6A6880;
+  --paper:#09090F;--paper2:#13131F;--paper3:#262640;
+  --bronze:#C8952A;--bronzel:#241E12;--bronzed:#E8B850;
+  --gold:#C8952A;--goldl:#241E12;--goldd:#E8B850;
+  --teal:#3DB8A8;--teall:#0E211F;
+  --red:#E05050;--redl:#2A1414;
+  --green:#3DB87A;--greenl:#0F241A;
+  --amber:#E0A848;--amberl:#241C10;
+  --blue:#6A9EEE;--bluel:#121A2A;
+  --purple:#A090E8;--purplel:#1A1426;
+  --slate:#9A97A8;--slatel:#181828;
+  --slg:0 12px 40px rgba(0,0,0,.55);
+  --sl:0 1px 3px rgba(0,0,0,.4);
+}
+/* Inverted components — these used --ink (a dark colour in light mode) as a
+   background, so a straight variable flip would invert them incorrectly. */
+:root[data-theme="dark"] .tnav{background:#0C0C1A;box-shadow:0 2px 12px rgba(0,0,0,.5)}
+:root[data-theme="dark"] .nlogo,:root[data-theme="dark"] .nuser strong,:root[data-theme="dark"] .burger{color:var(--ink)}
+:root[data-theme="dark"] .btnp,:root[data-theme="dark"] .btnc,:root[data-theme="dark"] .si.on,
+:root[data-theme="dark"] .fbtn.on,:root[data-theme="dark"] .ctab.on,:root[data-theme="dark"] .pni.on{background:var(--gold);color:var(--paper);border-color:var(--gold)}
+:root[data-theme="dark"] .btnp:hover,:root[data-theme="dark"] .btnc:hover{background:var(--goldd)}
+:root[data-theme="dark"] #ld,:root[data-theme="dark"] #auth{background:var(--paper)}
+:root[data-theme="dark"] .ld-logo{color:var(--ink)}
+:root[data-theme="dark"] .acard{background:var(--paper2);border:1px solid var(--paper3)}
+:root[data-theme="dark"] .toast{background:var(--paper3);color:var(--ink)}
+/* Theme toggle button in the top nav */
+.btntheme{font-size:1rem;line-height:1;padding:.3rem .55rem;border:1px solid rgba(250,248,244,.2);border-radius:var(--rs);background:transparent;color:rgba(250,248,244,.7);cursor:pointer;transition:all .2s}
+.btntheme:hover{background:rgba(250,248,244,.1);color:var(--paper)}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{font-size:15px}
 body{font-family:var(--sans);background:var(--paper);color:var(--ink);min-height:100vh;line-height:1.6}
@@ -331,6 +366,7 @@ textarea.fi{resize:vertical;min-height:72px}
     <div class="nr">
       <div style="font-size:.66rem;color:rgba(250,248,244,.35);letter-spacing:.04em">v2.0 &mdash; built 20 May 2026 SAST</div>
       <div class="nuser">Signed in as <strong id="nname">&#8212;</strong></div>
+      <button class="btntheme" id="themeBtn" onclick="toggleTheme()" title="Toggle light / dark theme" aria-label="Toggle theme">&#9789;</button>
       <button class="btnso" onclick="doSignout()">Sign out</button>
     </div>
   </nav>
@@ -347,6 +383,7 @@ textarea.fi{resize:vertical;min-height:72px}
     <div class="ssec">
       <div class="slbl">Pipeline</div>
       <button class="si" onclick="goV('opportunities',this)"><span class="ic">&#9670;</span>Opportunities<span class="sbadge" id="oppbadge" style="display:none;background:var(--bluel);color:var(--blue)"></span></button>
+      <button class="si" onclick="goV('dealtracking',this)"><span class="ic">&#9650;</span>Deal tracking</button>
       <button class="si" onclick="goV('introductions',this)"><span class="ic">&#9733;</span>Investor targets<span class="sbadge" id="introbadge" style="display:none;background:var(--teall);color:var(--teal)"></span></button>
     </div>
     <div class="sdiv"></div>
@@ -416,6 +453,7 @@ textarea.fi{resize:vertical;min-height:72px}
       </div>
       <div id="opp-list"></div>
     </div>
+    <div class="view" id="v-dealtracking"></div>
     <div class="view" id="v-documents">
       <div class="pgh" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem">
         <div><div class="pgt">Documents</div><div class="pgs">Structured repository for legal, commercial and operational documents</div></div>
@@ -700,7 +738,24 @@ const SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6I
 const sb=createClient(SU,SK);
 const SV='11';
 /* Expose Supabase client + auth state to embedded iframes (e.g. P1 model). */
-window.__resgro = { sb, getMe: () => me };
+window.__resgro = { sb, getMe: () => me, getTheme: () => document.documentElement.dataset.theme || 'dark' };
+
+/* ── THEME ───────────────────────────────────────────────────────────────────
+   Dark is the canonical theme (it lifts the P1 model palette). Persisted to
+   localStorage and broadcast via a 'resgro-theme' event so embedded iframes
+   (the P1 model) can stay in sync. */
+function applyTheme(t){
+  document.documentElement.dataset.theme=t;
+  const b=document.getElementById('themeBtn');
+  if(b)b.innerHTML=t==='dark'?'&#9728;':'&#9789;'; /* sun in dark (→light), moon in light (→dark) */
+  try{localStorage.setItem('resgro_theme',t);}catch(e){}
+  window.dispatchEvent(new CustomEvent('resgro-theme',{detail:t}));
+}
+window.toggleTheme=()=>applyTheme(document.documentElement.dataset.theme==='dark'?'light':'dark');
+(function initTheme(){
+  let t='dark';try{t=localStorage.getItem('resgro_theme')||'dark';}catch(e){}
+  applyTheme(t);
+})();
 let me=null,myP=null,decs=[],users=[],coms=[],vers=[],atts=[],opps=[],docs=[],minutes=[],intros=[];
 window.introF=null;
 window.stF=null;window.phF=null;window.srF='';window.oppF=null;window.mmF=null;
@@ -882,6 +937,7 @@ window.goV=(v,btn)=>{
   else if(v==='progress')renderProg();
   else if(v==='activity')renderAct();
   else if(v==='opportunities'){renderOppKanban();renderOpps();}
+  else if(v==='dealtracking')renderDealTracking();
   else if(v==='introductions')renderIntros();
   else if(v==='documents')renderDocs();
   else if(v==='minutes')renderMinutes();
@@ -1194,6 +1250,83 @@ window.renderOppKanban=function(){
     </div>`;
   }).join('')}</div>`;
 };
+
+/* ── DEAL TRACKING DASHBOARD ───────────────────────────────────────────────
+   Read-only analytics over the opportunities pipeline. v1 derives deal
+   probability from `likelihood`; once the milestone/probability field lands
+   (Phase 0 schema) this swaps to the P1 milestone mapping. Value is tracked on
+   expected Resgro fee (notional × fee% × probability), not gross notional. */
+const PROB_FROM_LIK={high:0.7,medium:0.4,low:0.15,uncertain:0.1};
+function dealProb(o){return PROB_FROM_LIK[o.likelihood]!=null?PROB_FROM_LIK[o.likelihood]:0.25;}
+function dealFee(o){return (parseFloat(o.estimated_size)||0)*(parseFloat(o.estimated_fee_pct)||0)/100;} /* $m */
+function fmtUSD(x){
+  if(x>=1000)return '$'+(x/1000).toFixed(x>=10000?0:1)+'bn';
+  if(x>=100)return '$'+Math.round(x)+'m';
+  if(x>=1)return '$'+x.toFixed(1)+'m';
+  if(x>0)return '$'+Math.round(x*1000)+'k';
+  return '$0';
+}
+function renderDealTracking(){
+  const el=document.getElementById('v-dealtracking');if(!el)return;
+  const active=opps.filter(o=>!['passed','on_hold'].includes(o.stage));
+  const onHold=opps.filter(o=>o.stage==='on_hold');
+  const grossNotional=active.reduce((s,o)=>s+(parseFloat(o.estimated_size)||0),0);
+  const grossFee=active.reduce((s,o)=>s+dealFee(o),0);
+  const weightedFee=active.reduce((s,o)=>s+dealFee(o)*dealProb(o),0);
+  const ready=active.filter(o=>{try{return gatePct(o.id)===100;}catch(e){return false;}}).length;
+  const stages=['idea','qualifying','developing','ready'];
+  const byStage=stages.map(s=>{const items=active.filter(o=>o.stage===s);
+    return{s,n:items.length,wf:items.reduce((a,o)=>a+dealFee(o)*dealProb(o),0)};});
+  const maxN=Math.max(1,...byStage.map(x=>x.n));
+  const pillars=[1,2,3,4];
+  const byPillar=pillars.map(p=>{const items=active.filter(o=>parseInt(o.pillar)===p);
+    return{p,n:items.length,gn:items.reduce((a,o)=>a+(parseFloat(o.estimated_size)||0),0),
+      wf:items.reduce((a,o)=>a+dealFee(o)*dealProb(o),0)};}).filter(x=>x.n>0);
+  const top=[...active].map(o=>({o,ev:dealFee(o)*dealProb(o)})).filter(x=>x.ev>0)
+    .sort((a,b)=>b.ev-a.ev).slice(0,7);
+  const PFILL={1:'var(--bronze)',2:'var(--teal)',3:'var(--green)',4:'var(--blue)'};
+  el.innerHTML=`
+  <div class="pgh"><div class="pgt">Deal tracking</div><div class="pgs">Probability-weighted pipeline across the four pillars &mdash; expected Resgro fee at current likelihood</div></div>
+  <div class="stats">
+    <div class="stat"><div class="slb">Weighted fee</div><div class="sv" style="color:var(--bronzed)">${fmtUSD(weightedFee)}</div><div class="ss">of ${fmtUSD(grossFee)} gross at 100%</div></div>
+    <div class="stat"><div class="slb">Gross notional</div><div class="sv" style="color:var(--blue)">${fmtUSD(grossNotional)}</div><div class="ss">across ${active.length} live deals</div></div>
+    <div class="stat"><div class="slb">Live deals</div><div class="sv">${active.length}</div><div class="ss">${onHold.length} on hold</div></div>
+    <div class="stat"><div class="slb">&sect;9 mandate-ready</div><div class="sv" style="color:var(--green)">${ready}</div><div class="ss">gate cleared to market</div></div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.5rem;align-items:start">
+    <div class="psec">
+      <div class="phd"><div class="ptitle">Stage funnel</div><div class="ppct">${active.length}</div></div>
+      ${byStage.map(x=>`<div style="margin-bottom:.7rem">
+        <div style="display:flex;justify-content:space-between;font-size:.74rem;color:var(--ink3);margin-bottom:.25rem">
+          <span style="color:${STC[x.s]};font-weight:600">${STL[x.s]}</span>
+          <span>${x.n} &middot; ${fmtUSD(x.wf)} wtd</span></div>
+        <div class="pbar"><div class="pf" style="width:${Math.round(x.n/maxN*100)}%;background:${STC[x.s]}"></div></div>
+      </div>`).join('')}
+    </div>
+    <div class="psec">
+      <div class="phd"><div class="ptitle">By pillar</div><div class="ppct">${byPillar.length}</div></div>
+      ${byPillar.map(x=>`<div style="display:flex;align-items:center;gap:.6rem;padding:.5rem 0;border-bottom:1px solid var(--paper3)">
+        <div style="width:9px;height:9px;border-radius:50%;background:${PFILL[x.p]};flex-shrink:0"></div>
+        <div style="flex:1;min-width:0"><div style="font-size:.82rem;font-weight:600;color:var(--ink)">${pillarShort(x.p)}</div>
+        <div style="font-size:.72rem;color:var(--ink3)">${x.n} deal${x.n!==1?'s':''} &middot; ${fmtUSD(x.gn)} notional</div></div>
+        <div style="font-size:.82rem;font-weight:600;color:var(--bronzed);flex-shrink:0">${fmtUSD(x.wf)}</div>
+      </div>`).join('')}
+      ${!byPillar.length?'<div class="empty"><div class="empi">&#9650;</div><div class="empt">No live deals</div></div>':''}
+    </div>
+    <div class="psec">
+      <div class="phd"><div class="ptitle">Top weighted deals</div></div>
+      ${top.map(({o,ev})=>{const lhT=LHC[o.likelihood]||'var(--ink4)';
+        return`<div style="display:flex;align-items:flex-start;gap:.6rem;padding:.5rem 0;border-bottom:1px solid var(--paper3);cursor:pointer" onclick="goV('opportunities',document.querySelectorAll('.si')[5])">
+        <div style="width:8px;height:8px;border-radius:50%;background:${lhT};flex-shrink:0;margin-top:5px"></div>
+        <div style="flex:1;min-width:0"><div style="font-size:.82rem;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${o.title}</div>
+        <div style="font-size:.72rem;color:var(--ink3)">${pillarShort(o.pillar)} &middot; ${stageLabel(o.stage)} &middot; ${Math.round(dealProb(o)*100)}%</div></div>
+        <div style="font-size:.82rem;font-weight:600;color:var(--bronzed);flex-shrink:0">${fmtUSD(ev)}</div>
+      </div>`;}).join('')}
+      ${!top.length?'<div class="empty"><div class="empi">&#9670;</div><div class="empt">No valued deals yet</div></div>':''}
+    </div>
+  </div>
+  <div class="pgs" style="margin-top:1.25rem;font-size:.74rem;color:var(--ink4)">Probability v1 derived from likelihood (high 70% &middot; medium 40% &middot; low 15%). Upgrades to milestone-based weighting when the P1 deal-register migration lands.</div>`;
+}
 
 window.renderOpps=function(){
   const el=document.getElementById('opp-list');if(!el)return;
