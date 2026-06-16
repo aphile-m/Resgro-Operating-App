@@ -566,6 +566,15 @@ textarea.fi{resize:vertical;min-height:72px}
         <option value="low">Low &mdash; early or uncertain</option>
         <option value="uncertain">Uncertain &mdash; cannot assess yet</option>
       </select></div>
+      <div class="fg"><label class="fl">Execution milestone</label><select class="fsel" id="o-milestone" onchange="toggleMilestoneCustom()">
+        <option value="">&mdash; Not set (weight by likelihood) &mdash;</option>
+        <option value="engaged">Engaged &mdash; 10%</option>
+        <option value="eoi">EOI &mdash; 20%</option>
+        <option value="assessing">Assessing &mdash; 60%</option>
+        <option value="approved">Approved &mdash; 100%</option>
+        <option value="custom">Custom probability&hellip;</option>
+      </select></div>
+      <div class="fg" id="o-prob-wrap" style="display:none"><label class="fl">Custom probability (%)</label><input class="fi" type="number" id="o-prob" placeholder="e.g. 45" min="0" max="100"></div>
       <div class="fg"><label class="fl">Client / institution</label><input class="fi" id="o-client" placeholder="e.g. Ecobank Nigeria, Sepfluor, UBU Renewables"></div>
       <div class="fg"><label class="fl">Client type</label><select class="fsel" id="o-ctype">
         <option value="">&mdash; Select &mdash;</option>
@@ -1432,17 +1441,23 @@ window.openOppModal=async(id)=>{
   const s=(el,val)=>{const e=document.getElementById(el);if(e&&val!=null)e.value=val;};
   if(o){
     s('o-title',o.title);s('o-desc',o.description);s('o-pillar',o.pillar);s('o-stage',o.stage);
-    s('o-lh',o.likelihood);s('o-client',o.client_name);s('o-ctype',o.client_type);
+    s('o-lh',o.likelihood);s('o-milestone',o.execution_milestone||'');s('o-prob',o.execution_prob);
+    s('o-client',o.client_name);s('o-ctype',o.client_type);
     s('o-dtype',o.deal_type);s('o-source',o.source);s('o-size',o.estimated_size);s('o-fee',o.estimated_fee_pct);
     s('o-months',o.estimated_months_to_close);
     s('o-idate',o.intro_date);s('o-nadate',o.next_action_date);s('o-na',o.next_action);
     s('o-blockers',o.blockers);s('o-notes',o.notes);
     s('o-iroko',o.iroko_relevant?'true':'false');s('o-fais',o.fais_required?'true':'false');
   } else {
-    ['o-title','o-desc','o-client','o-dtype','o-na','o-blockers','o-notes','o-idate','o-nadate','o-size','o-fee','o-months'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
-    s('o-stage','idea');s('o-lh','medium');s('o-iroko','true');s('o-fais','false');s('o-pillar','1');
+    ['o-title','o-desc','o-client','o-dtype','o-na','o-blockers','o-notes','o-idate','o-nadate','o-size','o-fee','o-months','o-prob'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+    s('o-stage','idea');s('o-lh','medium');s('o-milestone','');s('o-iroko','true');s('o-fais','false');s('o-pillar','1');
   }
+  toggleMilestoneCustom();
   document.getElementById('oppmodal').classList.add('open');
+};
+window.toggleMilestoneCustom=()=>{
+  const w=document.getElementById('o-prob-wrap');
+  if(w)w.style.display=(document.getElementById('o-milestone')?.value==='custom')?'block':'none';
 };
 window.closeOppModal=()=>document.getElementById('oppmodal').classList.remove('open');
 window.submitOpp=async()=>{
@@ -1452,15 +1467,17 @@ window.submitOpp=async()=>{
   const id=document.getElementById('o-id').value;
   const g=el=>document.getElementById(el)?.value||null;
   const gn=el=>{const v=parseFloat(document.getElementById(el)?.value);return isNaN(v)?null:v;};
-  const row={title,description:desc,pillar:parseInt(g('o-pillar'))||1,stage:g('o-stage')||'idea',likelihood:g('o-lh')||'medium',client_name:g('o-client'),client_type:g('o-ctype'),deal_type:g('o-dtype'),source:g('o-source'),estimated_size:gn('o-size'),estimated_fee_pct:gn('o-fee'),estimated_months_to_close:gn('o-months')?Math.round(gn('o-months')):null,intro_date:g('o-idate'),next_action_date:g('o-nadate'),next_action:g('o-na'),blockers:g('o-blockers'),notes:g('o-notes'),iroko_relevant:g('o-iroko')==='true',fais_required:g('o-fais')==='true',created_by:me.id};
+  const milestone=g('o-milestone');
+  const row={title,description:desc,pillar:parseInt(g('o-pillar'))||1,stage:g('o-stage')||'idea',likelihood:g('o-lh')||'medium',execution_milestone:milestone||null,execution_prob:milestone==='custom'?gn('o-prob'):null,client_name:g('o-client'),client_type:g('o-ctype'),deal_type:g('o-dtype'),source:g('o-source'),estimated_size:gn('o-size'),estimated_fee_pct:gn('o-fee'),estimated_months_to_close:gn('o-months')?Math.round(gn('o-months')):null,intro_date:g('o-idate'),next_action_date:g('o-nadate'),next_action:g('o-na'),blockers:g('o-blockers'),notes:g('o-notes'),iroko_relevant:g('o-iroko')==='true',fais_required:g('o-fais')==='true',last_activity:new Date().toISOString(),created_by:me.id};
   if(id)await sb.from('opportunities').update(row).eq('id',id);
   else await sb.from('opportunities').insert(row);
   const{data}=await sb.from('opportunities').select('*').order('created_at',{ascending:false});opps=(data||[]).filter(x=>!x.title.startsWith('__seed_v'));
   window.closeOppModal();renderOppKanban();renderOpps();updBadge();toast(id?'Opportunity updated':'Opportunity added','ok');
 };
 window.updOppStage=async(id,stage)=>{
-  await sb.from('opportunities').update({stage}).eq('id',id);
-  const idx=opps.findIndex(o=>o.id===id);if(idx>-1)opps[idx].stage=stage;
+  const last_activity=new Date().toISOString();
+  await sb.from('opportunities').update({stage,last_activity}).eq('id',id);
+  const idx=opps.findIndex(o=>o.id===id);if(idx>-1){opps[idx].stage=stage;opps[idx].last_activity=last_activity;}
   renderOppKanban();renderOpps();toast('Stage updated','ok');
 };
 
