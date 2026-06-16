@@ -996,13 +996,15 @@ window.toggleSB=()=>document.getElementById('sbar').classList.toggle('open');
 
 /* ── DASHBOARD ─────────────────────────────────────────────────────────── */
 function renderDash(){
-  const active=opps.filter(o=>!['passed','on_hold'].includes(o.stage));
+  /* "Active" = deals in motion. Idea-stage (and on-hold/passed) live on the
+     Opportunities page, not the dashboard. */
+  const active=opps.filter(o=>['qualifying','developing','ready'].includes(o.stage));
   const totNotional=active.reduce((s,o)=>s+(parseFloat(o.estimated_size)||0),0);
   const totValue=active.reduce((s,o)=>s+dealFee(o),0);
   const nearClose=active.filter(o=>dealCompletion(o)>=60).length;
   const PMETA={1:{n:'Pillar 1 — Iroko origination',c:'var(--bronze)'},2:{n:'Pillar 2 — Portable alpha',c:'var(--teal)'},3:{n:'Pillar 3 — Corporate finance advisory',c:'var(--green)'},4:{n:'Pillar 4 — Corporate risk management',c:'var(--blue)'}};
   const groups=[1,2,3,4].map(p=>({p,items:active.filter(o=>parseInt(o.pillar)===p).sort((a,b)=>dealCompletion(b)-dealCompletion(a))})).filter(g=>g.items.length);
-  const stages=['idea','qualifying','developing','ready'];const stTot=active.length||1;
+  const stages=['qualifying','developing','ready'];const stTot=active.length||1;
   const pcColor=pc=>pc>=75?'var(--green)':pc>=40?'var(--amber)':'var(--ink4)';
   document.getElementById('v-dashboard').innerHTML=`
   <div class="dbk-hero">
