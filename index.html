@@ -376,6 +376,32 @@ textarea.fi{resize:vertical;min-height:72px}
 .dbk-prog{flex:1;min-width:130px}
 .dbk-prog-bar{height:6px;border-radius:99px;background:var(--paper3);overflow:hidden;margin-top:.3rem}
 .dbk-prog-f{height:100%;border-radius:99px;transition:width .5s}
+.dbk-toolbar{display:flex;align-items:center;gap:.35rem;flex-wrap:wrap;margin-bottom:1rem}
+.dbk-tb-l{font-size:.64rem;text-transform:uppercase;letter-spacing:.06em;color:var(--ink4);margin:0 .15rem 0 .25rem}
+.dbk-tb-sep{width:1px;height:18px;background:var(--paper3);margin:0 .35rem}
+.dbk-hint{font-size:.72rem;color:var(--ink3);margin:-.35rem 0 .9rem}
+.dbk-handle{cursor:grab;color:var(--ink4);font-size:.8rem;flex-shrink:0;user-select:none;margin-top:1px}
+.dbk-handle:active{cursor:grabbing}
+.dbk-card.dbk-drag,.dbk-row.dbk-drag,tr.dbk-drag{opacity:.4}
+.dbk-row{display:flex;align-items:center;gap:.7rem;background:var(--paper);border:1px solid var(--paper3);border-left-width:3px;border-radius:var(--rs);padding:.5rem .8rem;margin-bottom:.35rem;cursor:pointer;transition:background .15s}
+.dbk-row:hover{background:var(--paper2)}
+.dbk-row-name{flex:1;min-width:0;font-size:.85rem;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dbk-row-num{font-family:var(--serif);font-size:.92rem;color:var(--ink);width:62px;text-align:right;flex-shrink:0}
+.dbk-row-prog{display:flex;align-items:center;gap:.5rem;width:150px;flex-shrink:0}
+.dbk-row-prog b{font-size:.7rem;width:34px;text-align:right;font-weight:700}
+.dbk-mini{flex:1;height:6px;border-radius:99px;background:var(--paper3);overflow:hidden}
+.dbk-mini>span{display:block;height:100%;border-radius:99px}
+.dbk-table{width:100%;border-collapse:collapse;font-size:.82rem}
+.dbk-table th{text-align:left;font-size:.62rem;text-transform:uppercase;letter-spacing:.06em;color:var(--ink4);font-weight:600;padding:.45rem .6rem;border-bottom:1px solid var(--paper3)}
+.dbk-table td{padding:.5rem .6rem;border-bottom:1px solid var(--paper3);color:var(--ink2);vertical-align:middle}
+.dbk-table tbody tr:hover{background:var(--paper2)}
+.dbk-table td:first-child{font-weight:600;color:var(--ink)}
+.dbk-table .dbk-prog-bar{margin-top:0}
+@media(max-width:680px){
+  .dbk-row{flex-wrap:wrap}
+  .dbk-row-prog{width:100%}
+  .dbk-table th:nth-child(2),.dbk-table td:nth-child(2){display:none}
+}
 </style>
 </head>
 <body>
@@ -995,17 +1021,83 @@ window.goV=(v,btn)=>{
 window.toggleSB=()=>document.getElementById('sbar').classList.toggle('open');
 
 /* ── DASHBOARD ─────────────────────────────────────────────────────────── */
+const PMETA={1:{n:'Pillar 1 — Iroko origination',c:'var(--bronze)'},2:{n:'Pillar 2 — Portable alpha',c:'var(--teal)'},3:{n:'Pillar 3 — Corporate finance advisory',c:'var(--green)'},4:{n:'Pillar 4 — Corporate risk management',c:'var(--blue)'}};
+const dashPcColor=pc=>pc>=75?'var(--green)':pc>=40?'var(--amber)':'var(--ink4)';
+const DASH_KEY='resgro_dash_prefs';
+function dashPrefs(){try{return JSON.parse(localStorage.getItem(DASH_KEY))||{};}catch(e){return {};}}
+function saveDashPrefs(p){try{localStorage.setItem(DASH_KEY,JSON.stringify(p));}catch(e){}}
+window.setDashPref=(k,v)=>{const p=dashPrefs();p[k]=v;if(k==='sort'&&v==='manual')p.group='none';saveDashPrefs(p);renderDash();};
+window.resetDashOrder=()=>{const p=dashPrefs();delete p.order;p.sort='completion';saveDashPrefs(p);renderDash();};
+
+/* drag-to-reorder — persists a manual order on the device (localStorage) */
+window.__dashOrder=[]; /* ids in current display order, refreshed each render */
+let __dashSrc=null;
+window.dashDragStart=(e,id)=>{__dashSrc=id;e.dataTransfer.effectAllowed='move';try{e.dataTransfer.setData('text/plain',id);}catch(_){}};
+window.dashDragOver=(e)=>{e.preventDefault();e.dataTransfer.dropEffect='move';};
+window.dashDrop=(e,id)=>{e.preventDefault();const src=__dashSrc;__dashSrc=null;if(!src||src===id)return;
+  let ord=window.__dashOrder.filter(x=>x!==src);const i=ord.indexOf(id);ord.splice(i<0?ord.length:i,0,src);
+  const p=dashPrefs();p.order=ord;p.sort='manual';p.group='none';saveDashPrefs(p);renderDash();};
+const dndAttrs=id=>`draggable="true" ondragstart="dashDragStart(event,'${id}');this.classList.add('dbk-drag')" ondragend="this.classList.remove('dbk-drag')" ondragover="dashDragOver(event)" ondrop="dashDrop(event,'${id}')"`;
+
+function dashSortItems(items,sort,order){
+  const a=[...items];
+  if(sort==='manual'){const ix=id=>{const i=order.indexOf(id);return i<0?1e9:i;};return a.sort((x,y)=>ix(x.id)-ix(y.id)||dealCompletion(y)-dealCompletion(x));}
+  if(sort==='value')return a.sort((x,y)=>dealFee(y)-dealFee(x));
+  if(sort==='size')return a.sort((x,y)=>(parseFloat(y.estimated_size)||0)-(parseFloat(x.estimated_size)||0));
+  return a.sort((x,y)=>dealCompletion(y)-dealCompletion(x));
+}
+function dashCard(o){const pc=dealCompletion(o),col=dashPcColor(pc),sz=parseFloat(o.estimated_size)||0,fee=dealFee(o),c=(PMETA[parseInt(o.pillar)]||{}).c||'var(--ink4)';
+  return `<div class="dbk-card" ${dndAttrs(o.id)} style="border-left-color:${c}" onclick="goV('opportunities',document.querySelectorAll('.si')[5])">
+    <div class="dbk-top"><span class="dbk-handle" title="Drag to reorder">&#9776;</span>
+      <div style="flex:1;min-width:0"><div class="dbk-name">${o.title}</div>${o.next_action?`<div class="dbk-na">&#8594; ${o.next_action}</div>`:''}</div>
+      <span class="dbk-chip" style="color:${STC[o.stage]}">${STL[o.stage]}</span></div>
+    <div class="dbk-met">
+      <div class="m"><span class="mk">Deal size</span><span class="mv">${sz?fmtUSD(sz):'&mdash;'}</span></div>
+      <div class="m"><span class="mk">Deal value</span><span class="mv" style="color:var(--bronzed)">${fee>0?fmtUSD(fee):'&mdash;'}</span></div>
+      <div class="dbk-prog"><div style="display:flex;justify-content:space-between;font-size:.62rem;color:var(--ink4)"><span>Completion</span><span style="color:${col};font-weight:700">${pc}%</span></div>
+        <div class="dbk-prog-bar"><div class="dbk-prog-f" style="width:${pc}%;background:${col}"></div></div></div>
+    </div></div>`;}
+function dashRow(o){const pc=dealCompletion(o),col=dashPcColor(pc),sz=parseFloat(o.estimated_size)||0,fee=dealFee(o),c=(PMETA[parseInt(o.pillar)]||{}).c||'var(--ink4)';
+  return `<div class="dbk-row" ${dndAttrs(o.id)} style="border-left-color:${c}" onclick="goV('opportunities',document.querySelectorAll('.si')[5])">
+    <span class="dbk-handle" title="Drag to reorder">&#9776;</span>
+    <span class="dbk-row-name">${o.title}</span>
+    <span class="dbk-chip" style="color:${STC[o.stage]}">${STL[o.stage]}</span>
+    <span class="dbk-row-num">${sz?fmtUSD(sz):'&mdash;'}</span>
+    <span class="dbk-row-num" style="color:var(--bronzed)">${fee>0?fmtUSD(fee):'&mdash;'}</span>
+    <span class="dbk-row-prog"><span class="dbk-mini"><span style="width:${pc}%;background:${col}"></span></span><b style="color:${col}">${pc}%</b></span>
+  </div>`;}
+function dashTRow(o){const pc=dealCompletion(o),col=dashPcColor(pc),sz=parseFloat(o.estimated_size)||0,fee=dealFee(o);
+  return `<tr ${dndAttrs(o.id)} style="cursor:pointer" onclick="goV('opportunities',document.querySelectorAll('.si')[5])">
+    <td><span class="dbk-handle" style="margin-right:.4rem">&#9776;</span>${o.title}</td>
+    <td>${pillarShort(o.pillar)}</td>
+    <td><span class="dbk-chip" style="color:${STC[o.stage]}">${STL[o.stage]}</span></td>
+    <td style="text-align:right">${sz?fmtUSD(sz):'&mdash;'}</td>
+    <td style="text-align:right;color:var(--bronzed)">${fee>0?fmtUSD(fee):'&mdash;'}</td>
+    <td style="min-width:110px"><div class="dbk-prog-bar"><div class="dbk-prog-f" style="width:${pc}%;background:${col}"></div></div><div style="font-size:.6rem;color:${col};text-align:right;font-weight:700;margin-top:2px">${pc}%</div></td>
+  </tr>`;}
+function dashItems(items,view){
+  if(view==='table')return `<table class="dbk-table"><thead><tr><th>Deal</th><th>Pillar</th><th>Stage</th><th style="text-align:right">Size</th><th style="text-align:right">Value</th><th>Completion</th></tr></thead><tbody>${items.map(dashTRow).join('')}</tbody></table>`;
+  if(view==='compact')return items.map(dashRow).join('');
+  return items.map(dashCard).join('');
+}
 function renderDash(){
   /* "Active" = deals in motion. Idea-stage (and on-hold/passed) live on the
      Opportunities page, not the dashboard. */
   const active=opps.filter(o=>['qualifying','developing','ready'].includes(o.stage));
+  const P=dashPrefs();const view=P.view||'cards';const sort=P.sort||'completion';
+  const group=(sort==='manual')?'none':(P.group||'pillar');const order=P.order||[];
   const totNotional=active.reduce((s,o)=>s+(parseFloat(o.estimated_size)||0),0);
   const totValue=active.reduce((s,o)=>s+dealFee(o),0);
   const nearClose=active.filter(o=>dealCompletion(o)>=60).length;
-  const PMETA={1:{n:'Pillar 1 — Iroko origination',c:'var(--bronze)'},2:{n:'Pillar 2 — Portable alpha',c:'var(--teal)'},3:{n:'Pillar 3 — Corporate finance advisory',c:'var(--green)'},4:{n:'Pillar 4 — Corporate risk management',c:'var(--blue)'}};
-  const groups=[1,2,3,4].map(p=>({p,items:active.filter(o=>parseInt(o.pillar)===p).sort((a,b)=>dealCompletion(b)-dealCompletion(a))})).filter(g=>g.items.length);
   const stages=['qualifying','developing','ready'];const stTot=active.length||1;
-  const pcColor=pc=>pc>=75?'var(--green)':pc>=40?'var(--amber)':'var(--ink4)';
+  let displayGroups;
+  if(group==='pillar'){
+    displayGroups=[1,2,3,4].map(p=>({label:PMETA[p].n,color:PMETA[p].c,items:dashSortItems(active.filter(o=>parseInt(o.pillar)===p),sort,order)})).filter(g=>g.items.length);
+  } else {
+    displayGroups=[{label:null,color:null,items:dashSortItems(active,sort,order)}];
+  }
+  window.__dashOrder=displayGroups.reduce((a,g)=>a.concat(g.items.map(o=>o.id)),[]);
+  const seg=(k,v,lbl)=>`<button class="fbtn ${(k==='view'?view:k==='sort'?sort:group)===v?'on':''}" onclick="setDashPref('${k}','${v}')">${lbl}</button>`;
   document.getElementById('v-dashboard').innerHTML=`
   <div class="dbk-hero">
     <div class="dbk-spark"></div>
@@ -1013,7 +1105,7 @@ function renderDash(){
     <p>${active.length} active ${active.length===1?'opportunity':'opportunities'} &middot; ${fmtUSD(totNotional)} notional &middot; ${fmtUSD(totValue)} in fee value</p>
   </div>
   <div class="dbk-stats">
-    <div class="dbk-stat"><div class="l">Live opportunities</div><div class="v">${active.length}</div><div class="s">across ${groups.length} pillar${groups.length===1?'':'s'}</div></div>
+    <div class="dbk-stat"><div class="l">Live opportunities</div><div class="v">${active.length}</div><div class="s">across ${displayGroups.filter(g=>g.items.length).length} ${group==='pillar'?'pillars':'group'}</div></div>
     <div class="dbk-stat"><div class="l">Total deal value</div><div class="v" style="color:var(--bronzed)">${fmtUSD(totValue)}</div><div class="s">gross fee at 100%</div></div>
     <div class="dbk-stat"><div class="l">Total notional</div><div class="v" style="color:var(--blue)">${fmtUSD(totNotional)}</div><div class="s">facility size</div></div>
     <div class="dbk-stat"><div class="l">Near close</div><div class="v" style="color:var(--green)">${nearClose}</div><div class="s">60%+ complete</div></div>
@@ -1022,33 +1114,14 @@ function renderDash(){
     <div class="dbk-stagebar">${stages.map(s=>{const n=active.filter(o=>o.stage===s).length;return n?`<div title="${STL[s]}: ${n}" style="width:${n/stTot*100}%;background:${STC[s]}"></div>`:'';}).join('')}</div>
     <div class="dbk-legend">${stages.map(s=>{const n=active.filter(o=>o.stage===s).length;return`<span><i style="background:${STC[s]}"></i>${STL[s]} ${n}</span>`;}).join('')}</div>
   </div>
-  ${groups.map(g=>{const gv=g.items.reduce((s,o)=>s+dealFee(o),0);return`
-  <div class="dbk-grp">
-    <div class="dbk-grp-h">
-      <span class="dbk-dot" style="background:${PMETA[g.p].c}"></span>
-      <span class="dbk-grp-t">${PMETA[g.p].n}</span>
-      <span class="dbk-grp-m">${g.items.length} deal${g.items.length===1?'':'s'} &middot; ${fmtUSD(gv)} value</span>
-    </div>
-    ${g.items.map(o=>{const pc=dealCompletion(o);const col=pcColor(pc);const sz=parseFloat(o.estimated_size)||0;const fee=dealFee(o);return`
-    <div class="dbk-card" style="border-left-color:${PMETA[g.p].c}" onclick="goV('opportunities',document.querySelectorAll('.si')[5])">
-      <div class="dbk-top">
-        <div style="flex:1;min-width:0">
-          <div class="dbk-name">${o.title}</div>
-          ${o.next_action?`<div class="dbk-na">&#8594; ${o.next_action}</div>`:''}
-        </div>
-        <span class="dbk-chip" style="color:${STC[o.stage]}">${STL[o.stage]}</span>
-      </div>
-      <div class="dbk-met">
-        <div class="m"><span class="mk">Deal size</span><span class="mv">${sz?fmtUSD(sz):'&mdash;'}</span></div>
-        <div class="m"><span class="mk">Deal value</span><span class="mv" style="color:var(--bronzed)">${fee>0?fmtUSD(fee):'&mdash;'}</span></div>
-        <div class="dbk-prog">
-          <div style="display:flex;justify-content:space-between;font-size:.62rem;color:var(--ink4)"><span>Completion</span><span style="color:${col};font-weight:700">${pc}%</span></div>
-          <div class="dbk-prog-bar"><div class="dbk-prog-f" style="width:${pc}%;background:${col}"></div></div>
-        </div>
-      </div>
-    </div>`;}).join('')}
-  </div>`;}).join('')}
-  ${!active.length?'<div class="empty"><div class="empi">&#9670;</div><div class="empt">No live opportunities</div><div class="empd">Add a deal in the Opportunities view to see it here</div></div>':''}`;
+  <div class="dbk-toolbar">
+    <span class="dbk-tb-l">View</span>${seg('view','cards','Cards')}${seg('view','compact','Compact')}${seg('view','table','Table')}
+    <span class="dbk-tb-sep"></span>
+    <span class="dbk-tb-l">Sort</span>${seg('sort','completion','Completion')}${seg('sort','value','Value')}${seg('sort','size','Size')}${seg('sort','manual','Manual')}
+    ${sort!=='manual'?`<span class="dbk-tb-sep"></span><span class="dbk-tb-l">Group</span>${seg('group','pillar','Pillar')}${seg('group','none','Flat')}`:`<button class="fbtn" onclick="resetDashOrder()" style="margin-left:auto">&#8635; Reset order</button>`}
+  </div>
+  ${sort==='manual'?'<div class="dbk-hint">&#9776; Drag the handle to reorder &mdash; your order is saved on this device.</div>':''}
+  ${active.length?displayGroups.map(g=>`<div class="dbk-grp">${g.label?`<div class="dbk-grp-h"><span class="dbk-dot" style="background:${g.color}"></span><span class="dbk-grp-t">${g.label}</span><span class="dbk-grp-m">${g.items.length} deal${g.items.length===1?'':'s'} &middot; ${fmtUSD(g.items.reduce((s,o)=>s+dealFee(o),0))} value</span></div>`:''}${dashItems(g.items,view)}</div>`).join(''):'<div class="empty"><div class="empi">&#9670;</div><div class="empt">No live opportunities</div><div class="empd">Add a deal in the Opportunities view to see it here</div></div>'}`;
 }
 
 /* ── COMPANY VIEW ──────────────────────────────────────────────────────── */
