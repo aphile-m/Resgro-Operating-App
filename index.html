@@ -741,9 +741,10 @@ const SV='11';
 window.__resgro = { sb, getMe: () => me, getTheme: () => document.documentElement.dataset.theme || 'dark' };
 
 /* ── THEME ───────────────────────────────────────────────────────────────────
-   Dark is the canonical theme (it lifts the P1 model palette). Persisted to
-   localStorage and broadcast via a 'resgro-theme' event so embedded iframes
-   (the P1 model) can stay in sync. */
+   Light is the default (every embedded tool is native light); dark is opt-in
+   and lifts the P1 model palette across the app. Persisted to localStorage and
+   broadcast via a 'resgro-theme' event so embedded iframes (the P1 model and
+   the Iroko Calculator) stay in sync. */
 function applyTheme(t){
   document.documentElement.dataset.theme=t;
   const b=document.getElementById('themeBtn');
@@ -753,7 +754,7 @@ function applyTheme(t){
 }
 window.toggleTheme=()=>applyTheme(document.documentElement.dataset.theme==='dark'?'light':'dark');
 (function initTheme(){
-  let t='dark';try{t=localStorage.getItem('resgro_theme')||'dark';}catch(e){}
+  let t='light';try{t=localStorage.getItem('resgro_theme')||'light';}catch(e){}
   applyTheme(t);
 })();
 let me=null,myP=null,decs=[],users=[],coms=[],vers=[],atts=[],opps=[],docs=[],minutes=[],intros=[];
