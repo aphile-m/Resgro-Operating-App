@@ -1258,7 +1258,22 @@ window.renderOppKanban=function(){
    (Phase 0 schema) this swaps to the P1 milestone mapping. Value is tracked on
    expected Resgro fee (notional × fee% × probability), not gross notional. */
 const PROB_FROM_LIK={high:0.7,medium:0.4,low:0.15,uncertain:0.1};
-function dealProb(o){return PROB_FROM_LIK[o.likelihood]!=null?PROB_FROM_LIK[o.likelihood]:0.25;}
+/* Probability uses the execution milestone where set (Phase 0 column), and
+   falls back to likelihood when it isn't — so this is safe before the schema
+   migration runs (the column is simply undefined on returned rows). */
+const PROB_FROM_MS={engaged:0.10,eoi:0.20,assessing:0.60,approved:1.00};
+function dealProb(o){
+  if(o.execution_milestone==='custom'&&o.execution_prob!=null)
+    return Math.max(0,Math.min(100,parseFloat(o.execution_prob)||0))/100;
+  if(o.execution_milestone&&PROB_FROM_MS[o.execution_milestone]!=null)
+    return PROB_FROM_MS[o.execution_milestone];
+  return PROB_FROM_LIK[o.likelihood]!=null?PROB_FROM_LIK[o.likelihood]:0.25;
+}
+function dealStalled(o){
+  if(!o.last_activity)return false;
+  const t=new Date(o.last_activity).getTime();
+  return isFinite(t)&&(Date.now()-t)>30*864e5; /* no movement in 30+ days */
+}
 function dealFee(o){return (parseFloat(o.estimated_size)||0)*(parseFloat(o.estimated_fee_pct)||0)/100;} /* $m */
 function fmtUSD(x){
   if(x>=1000)return '$'+(x/1000).toFixed(x>=10000?0:1)+'bn';
@@ -1275,6 +1290,7 @@ function renderDealTracking(){
   const grossFee=active.reduce((s,o)=>s+dealFee(o),0);
   const weightedFee=active.reduce((s,o)=>s+dealFee(o)*dealProb(o),0);
   const ready=active.filter(o=>{try{return gatePct(o.id)===100;}catch(e){return false;}}).length;
+  const stalled=active.filter(dealStalled).length;
   const stages=['idea','qualifying','developing','ready'];
   const byStage=stages.map(s=>{const items=active.filter(o=>o.stage===s);
     return{s,n:items.length,wf:items.reduce((a,o)=>a+dealFee(o)*dealProb(o),0)};});
@@ -1293,6 +1309,7 @@ function renderDealTracking(){
     <div class="stat"><div class="slb">Gross notional</div><div class="sv" style="color:var(--blue)">${fmtUSD(grossNotional)}</div><div class="ss">across ${active.length} live deals</div></div>
     <div class="stat"><div class="slb">Live deals</div><div class="sv">${active.length}</div><div class="ss">${onHold.length} on hold</div></div>
     <div class="stat"><div class="slb">&sect;9 mandate-ready</div><div class="sv" style="color:var(--green)">${ready}</div><div class="ss">gate cleared to market</div></div>
+    <div class="stat"><div class="slb">Stalled</div><div class="sv" style="color:${stalled?'var(--amber)':'var(--ink4)'}">${stalled}</div><div class="ss">no movement 30d+</div></div>
   </div>
   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.5rem;align-items:start">
     <div class="psec">
@@ -1319,14 +1336,14 @@ function renderDealTracking(){
       ${top.map(({o,ev})=>{const lhT=LHC[o.likelihood]||'var(--ink4)';
         return`<div style="display:flex;align-items:flex-start;gap:.6rem;padding:.5rem 0;border-bottom:1px solid var(--paper3);cursor:pointer" onclick="goV('opportunities',document.querySelectorAll('.si')[5])">
         <div style="width:8px;height:8px;border-radius:50%;background:${lhT};flex-shrink:0;margin-top:5px"></div>
-        <div style="flex:1;min-width:0"><div style="font-size:.82rem;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${o.title}</div>
+        <div style="flex:1;min-width:0"><div style="font-size:.82rem;font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${o.title}${dealStalled(o)?' <span style="font-size:.62rem;color:var(--amber)" title="No movement 30d+">&#9888;</span>':''}</div>
         <div style="font-size:.72rem;color:var(--ink3)">${pillarShort(o.pillar)} &middot; ${stageLabel(o.stage)} &middot; ${Math.round(dealProb(o)*100)}%</div></div>
         <div style="font-size:.82rem;font-weight:600;color:var(--bronzed);flex-shrink:0">${fmtUSD(ev)}</div>
       </div>`;}).join('')}
       ${!top.length?'<div class="empty"><div class="empi">&#9670;</div><div class="empt">No valued deals yet</div></div>':''}
     </div>
   </div>
-  <div class="pgs" style="margin-top:1.25rem;font-size:.74rem;color:var(--ink4)">Probability v1 derived from likelihood (high 70% &middot; medium 40% &middot; low 15%). Upgrades to milestone-based weighting when the P1 deal-register migration lands.</div>`;
+  <div class="pgs" style="margin-top:1.25rem;font-size:.74rem;color:var(--ink4)">Probability uses the execution milestone where set (Engaged 10% &middot; EOI 20% &middot; Assessing 60% &middot; Approved 100%), falling back to likelihood (high 70% &middot; medium 40% &middot; low 15%). Stalled = no movement in 30+ days.</div>`;
 }
 
 window.renderOpps=function(){
