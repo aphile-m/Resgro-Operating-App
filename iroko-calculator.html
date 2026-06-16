@@ -16,6 +16,38 @@
   --teal:#1a6060;--teal-bg:#e2f0f0;--teal-dark:#155050;
   --border:rgba(60,70,90,0.10);--shadow:0 2px 16px rgba(60,70,90,0.08);
 }
+/* ── DARK THEME ──────────────────────────────────────────────────────────────
+   Synced from the parent app via the theme bridge at the bottom of this file.
+   This page's tokens are dual-role: --navy/--navy-dark are both dark *chrome*
+   and dark *text*, and --white is both a card *surface* and light *text* on
+   that chrome. So we keep --white LIGHT (covers all chrome text, including
+   inline styles) and instead re-point the card-background selectors to dark
+   surfaces, then flip the --navy-as-text selectors to light. */
+:root[data-theme="dark"]{
+  --navy:#181828;--navy-dark:#111120;--navy-mid:#3A3A60;
+  --bronze:#C8952A;--bronze-light:#E8B850;--bronze-pale:#2A2418;--bronze-xpale:#1C1810;
+  --cream:#0C0C16;--white:#ECE7DF;--text:#ECE7DF;--muted:#8A8799;
+  --green:#3DB87A;--green-bg:#0F241A;--green-mid:#3DB87A;
+  --amber:#E0A848;--amber-bg:#241C10;
+  --red:#E05050;--red-bg:#2A1414;
+  --teal:#46B8A8;--teal-bg:#0E211F;--teal-dark:#2C8A8A;
+  --border:rgba(255,255,255,0.12);--shadow:0 2px 16px rgba(0,0,0,0.5);
+}
+/* cards used --white as a surface → elevated dark panels in dark mode */
+:root[data-theme="dark"] .inp-card,
+:root[data-theme="dark"] .deal-card,
+:root[data-theme="dark"] .tbl-card,
+:root[data-theme="dark"] .comp-toolbar,
+:root[data-theme="dark"] .cc,
+:root[data-theme="dark"] .comp-tbl,
+:root[data-theme="dark"] .inp-ctrl input:focus{background:#15151F}
+/* --navy was dark text on light surfaces → must be light in dark mode */
+:root[data-theme="dark"] .ead-calc,
+:root[data-theme="dark"] .sens,
+:root[data-theme="dark"] .mv,
+:root[data-theme="dark"] tfoot td,
+:root[data-theme="dark"] .ctr-sec td,
+:root[data-theme="dark"] .ctr-hl td:first-child{color:var(--text)}
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'DM Mono',monospace;background:var(--cream);color:var(--text);min-height:100vh}
 
@@ -1054,6 +1086,20 @@ function recalcAll(){
 // ── INIT ─────────────────────────────────────────────────────────────────
 el('footer_date').textContent='Updated '+new Date().toLocaleDateString('en-ZA',{day:'numeric',month:'short',year:'numeric'});
 recalcAll();
+
+// ── THEME BRIDGE ─────────────────────────────────────────────────────────
+// Follow the parent app's theme (read on load, then on every change event).
+(function(){
+  function applyParentTheme(){
+    try{
+      if(window.parent && window.parent.__resgro && window.parent.__resgro.getTheme){
+        document.documentElement.dataset.theme=window.parent.__resgro.getTheme();
+      }
+    }catch(e){/* cross-origin */}
+  }
+  applyParentTheme();
+  try{window.parent.addEventListener('resgro-theme',function(e){document.documentElement.dataset.theme=e.detail;});}catch(e){}
+})();
 </script>
 </body>
 </html>
