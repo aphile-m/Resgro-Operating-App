@@ -1352,6 +1352,13 @@ async function CInit(){
     parentSb=window.parent && window.parent.__resgro && window.parent.__resgro.sb;
     parentMe=window.parent && window.parent.__resgro && window.parent.__resgro.getMe && window.parent.__resgro.getMe();
   }catch(e){/* cross-origin block */}
+  /* Sync theme with the parent app and follow its theme-change events. */
+  try{
+    if(window.parent && window.parent.__resgro && window.parent.__resgro.getTheme){
+      document.documentElement.dataset.theme=window.parent.__resgro.getTheme();
+    }
+    window.parent.addEventListener('resgro-theme',e=>{document.documentElement.dataset.theme=e.detail;});
+  }catch(e){/* cross-origin block */}
   if(!parentSb){CStatus('Local only','cs-warn');return;}
   window.CS.sb=parentSb;
   window.CS.me=parentMe;
