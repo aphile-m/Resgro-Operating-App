@@ -402,6 +402,9 @@ textarea.fi{resize:vertical;min-height:72px}
   .dbk-row-prog{width:100%}
   .dbk-table th:nth-child(2),.dbk-table td:nth-child(2){display:none}
 }
+/* ── INVOICES ─────────────────────────────────────────────────────────── */
+.inv-line{display:grid;grid-template-columns:1fr 130px 34px;gap:.5rem;margin-bottom:.5rem;align-items:center}
+.inv-line .btns{padding:.4rem .6rem;line-height:1}
 </style>
 </head>
 <body>
@@ -453,6 +456,11 @@ textarea.fi{resize:vertical;min-height:72px}
       <div class="slbl">Knowledge</div>
       <button class="si" onclick="goV('documents',this)"><span class="ic">&#128196;</span>Documents</button>
       <button class="si" onclick="goV('minutes',this)"><span class="ic">&#128221;</span>Meeting minutes</button>
+    </div>
+    <div class="sdiv"></div>
+    <div class="ssec">
+      <div class="slbl">Finance</div>
+      <button class="si" onclick="goV('invoices',this)"><span class="ic">&#82;</span>Invoices<span class="sbadge" id="invbadge" style="display:none;background:var(--amberl);color:var(--amber)"></span></button>
     </div>
     <div class="sdiv"></div>
     <div class="ssec">
@@ -537,6 +545,21 @@ textarea.fi{resize:vertical;min-height:72px}
         <button class="fbtn" onclick="window.mmF='legal';renderMinutes();document.querySelectorAll('#v-minutes .fbtn').forEach(b=>b.classList.remove('on'));this.classList.add('on')">Legal</button>
       </div>
       <div id="mm-list"></div>
+    </div>
+    <div class="view" id="v-invoices">
+      <div class="pgh" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem">
+        <div><div class="pgt">Invoices</div><div class="pgs">Fee invoicing &amp; receivables &mdash; Resgro Capital (Pty) Ltd</div></div>
+        <button class="btnadd" onclick="openInvModal()">+ New invoice</button>
+      </div>
+      <div id="inv-stats"></div>
+      <div class="fbar">
+        <button class="fbtn on" onclick="window.invF=null;renderInvList();document.querySelectorAll('#v-invoices .fbtn').forEach(b=>b.classList.remove('on'));this.classList.add('on')">All</button>
+        <button class="fbtn" onclick="window.invF='draft';renderInvList();document.querySelectorAll('#v-invoices .fbtn').forEach(b=>b.classList.remove('on'));this.classList.add('on')">Draft</button>
+        <button class="fbtn" onclick="window.invF='sent';renderInvList();document.querySelectorAll('#v-invoices .fbtn').forEach(b=>b.classList.remove('on'));this.classList.add('on')">Sent</button>
+        <button class="fbtn" onclick="window.invF='paid';renderInvList();document.querySelectorAll('#v-invoices .fbtn').forEach(b=>b.classList.remove('on'));this.classList.add('on')">Paid</button>
+        <button class="fbtn" onclick="window.invF='overdue';renderInvList();document.querySelectorAll('#v-invoices .fbtn').forEach(b=>b.classList.remove('on'));this.classList.add('on')">Overdue</button>
+      </div>
+      <div id="inv-list"></div>
     </div>
 
     <div class="view" id="v-iroko">
@@ -800,6 +823,38 @@ textarea.fi{resize:vertical;min-height:72px}
   </div>
 </div>
 
+<!-- INVOICE MODAL -->
+<div class="mov" id="invmodal">
+  <div class="modal" style="max-width:720px">
+    <div class="mtitle" id="invmt">New invoice</div>
+    <div class="msub" id="invnum-sub">Number assigned on save</div>
+    <input type="hidden" id="i-id">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.875rem">
+      <div class="fg"><label class="fl">Bill to — company *</label><input class="fi" id="i-company" placeholder="e.g. Kgabi Holdings (Pty) Ltd"></div>
+      <div class="fg"><label class="fl">Contact person</label><input class="fi" id="i-contact" placeholder="e.g. Kgabi"></div>
+      <div class="fg"><label class="fl">Company reg no</label><input class="fi" id="i-reg" placeholder="e.g. 2026/000000/07"></div>
+      <div class="fg"><label class="fl">Email</label><input class="fi" id="i-email" placeholder="billing@company.co.za"></div>
+      <div class="fg" style="grid-column:1/-1"><label class="fl">Address</label><input class="fi" id="i-addr" placeholder="Street, suburb, city, postal code"></div>
+      <div class="fg"><label class="fl">Issue date *</label><input class="fi" type="date" id="i-issue"></div>
+      <div class="fg"><label class="fl">Due date *</label><input class="fi" type="date" id="i-due"></div>
+      <div class="fg"><label class="fl">Status</label><select class="fsel" id="i-status">
+        <option value="draft">Draft</option><option value="sent">Sent</option><option value="paid">Paid</option>
+      </select></div>
+      <div class="fg"><label class="fl">VAT</label><select class="fsel" id="i-vat">
+        <option value="0">Not VAT registered — no VAT</option>
+        <option value="15">Add 15% VAT</option>
+      </select></div>
+    </div>
+    <div class="slbl2">Line items</div>
+    <div id="i-lines"></div>
+    <button class="btns" onclick="addInvLine()" style="margin-bottom:1rem">+ Add line</button>
+    <div style="text-align:right;font-size:.9rem;margin-bottom:1rem">Total: <strong id="i-total" style="font-family:var(--serif);font-size:1.15rem;color:var(--bronzed)">R0.00</strong></div>
+    <div class="fg"><label class="fl">Banking details (shown on the invoice)</label><textarea class="fi" id="i-bank" placeholder="Bank / account name / account no / branch code / reference"></textarea></div>
+    <div class="fg"><label class="fl">Notes</label><textarea class="fi" id="i-notes" placeholder="Payment terms, references, context..."></textarea></div>
+    <div class="macts"><button class="btnp" onclick="submitInv()" style="flex:1" id="i-submit-btn">Save invoice</button><button class="btns" onclick="closeInvModal()">Cancel</button></div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script type="module">
@@ -828,7 +883,7 @@ window.toggleTheme=()=>applyTheme(document.documentElement.dataset.theme==='dark
   let t='light';try{t=localStorage.getItem('resgro_theme')||'light';}catch(e){}
   applyTheme(t);
 })();
-let me=null,myP=null,decs=[],users=[],coms=[],vers=[],atts=[],opps=[],docs=[],minutes=[],intros=[];
+let me=null,myP=null,decs=[],users=[],coms=[],vers=[],atts=[],opps=[],docs=[],minutes=[],intros=[],invs=[],invTableOk=false;
 window.introF=null;
 window.stF=null;window.phF=null;window.srF='';window.oppF=null;window.mmF=null;
 
@@ -932,6 +987,13 @@ async function loadAll(){
   opps=(op.data||[]).filter(x=>!x.title.startsWith('__seed_v'));docs=dc.data||[];minutes=mm.data||[];
   intros=(intr.data||[]).filter(x=>!x.institution.startsWith('__seed_v'));
 
+  /* Invoices — table may not exist until supabase_invoices_schema.sql is run;
+     degrade gracefully rather than break the whole load. */
+  try{
+    const inv=await sb.from('invoices').select('*').order('number');
+    if(!inv.error){invTableOk=true;invs=inv.data||[];await seedInvoices();}
+  }catch(e){invTableOk=false;}
+
   /* DECISIONS reseed on SV bump — fresh slate for Resgro */
   const decMarker=(d.data||[]).find(x=>x.title==='__seed_v'+SV);
   if(!decMarker){
@@ -1013,6 +1075,7 @@ window.goV=(v,btn)=>{
   else if(v==='introductions')renderIntros();
   else if(v==='documents')renderDocs();
   else if(v==='minutes')renderMinutes();
+  else if(v==='invoices')renderInvoices();
   else if(v==='iroko')renderIrokoAll();
   else if(v==='pillars')renderPillarsAll();
   else if(v==='roadmap')renderRoadmap();
@@ -2404,6 +2467,216 @@ function updBadge(){
 function fmtD(iso){try{return new Date(iso).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});}catch{return iso||'';}}
 function fmtM(n){if(!n)return'$0';if(n>=1e6)return'$'+(Math.round(n/1e5)/10)+'m';if(n>=1e3)return'$'+Math.round(n/1e3)+'k';return'$'+Math.round(n);}
 function fmtR(n){if(!n)return'R0';if(n>=1e6)return'R'+(Math.round(n/1e5)/10)+'m';if(n>=1e3)return'R'+Math.round(n/1e3)+'k';return'R'+Math.round(n);}
+/* ── INVOICES ──────────────────────────────────────────────────────────── */
+const RESGRO_FROM={name:'Resgro Capital (Pty) Ltd',reg:'CIPC 2026/377574/07',tax:'SARS 9670237206',addr:'99 10th Street, Parkmore, Gauteng 2191',email:'aphilem@gmail.com'};
+const fmtZAR=n=>'R'+(parseFloat(n)||0).toLocaleString('en-ZA',{minimumFractionDigits:2,maximumFractionDigits:2});
+const invSubtotal=inv=>(inv.line_items||[]).reduce((s,l)=>s+(parseFloat(l.amount)||0),0);
+const invVat=inv=>invSubtotal(inv)*((parseFloat(inv.vat_pct)||0)/100);
+const invTotal=inv=>invSubtotal(inv)+invVat(inv);
+const invOverdue=inv=>inv.status==='sent'&&inv.due_date&&new Date(inv.due_date)<new Date(new Date().toDateString());
+function invNextNumber(){
+  const yr=new Date().getFullYear();let mx=0;
+  invs.forEach(i=>{const m=/^INV-(\d{4})-(\d+)$/.exec(i.number||'');if(m&&parseInt(m[1])===yr)mx=Math.max(mx,parseInt(m[2]));});
+  return 'INV-'+yr+'-'+String(mx+1).padStart(3,'0');
+}
+async function seedInvoices(){
+  if(invs.length)return;
+  const today=new Date().toISOString().slice(0,10);
+  const due=new Date(Date.now()+14*864e5).toISOString().slice(0,10);
+  const bank=localStorage.getItem('resgro_inv_bank')||'Bank: [TBC — add account details]\nAccount name: Resgro Capital (Pty) Ltd\nReference: [invoice number]';
+  const mk=(n,who,co)=>({number:n,status:'draft',issue_date:today,due_date:due,currency:'ZAR',vat_pct:0,
+    bill_to:{company:co,contact:who,reg:'',email:'',addr:''},
+    line_items:[
+      {desc:'Company registration — share of costs [amount TBC — edit before sending]',amount:0},
+      {desc:'Share of R100,000 mandate initiation fee (equal one-third share) [confirm split]',amount:33333.33}
+    ],
+    bank_details:bank,
+    notes:'Payment due within 14 days of invoice date. Please use the invoice number as payment reference.',
+    created_by:me.id});
+  const rows=[mk('INV-2026-001','Kgabi','[Kgabi’s company — name TBC]'),mk('INV-2026-002','Portia','[Portia’s company — name TBC]')];
+  const{error}=await sb.from('invoices').insert(rows);
+  if(!error){const{data}=await sb.from('invoices').select('*').order('number');invs=data||[];}
+}
+window.renderInvoices=function(){
+  const st=document.getElementById('inv-stats');
+  if(!invTableOk){st.innerHTML='<div class="cw" style="margin-bottom:1rem"><strong>Invoices table not found.</strong> Run <code>supabase_invoices_schema.sql</code> in the Supabase SQL Editor, then reload.</div>';document.getElementById('inv-list').innerHTML='';return;}
+  const out=invs.filter(i=>i.status==='sent');
+  const od=invs.filter(invOverdue);
+  const paid=invs.filter(i=>i.status==='paid');
+  st.innerHTML=`<div class="stats">
+    <div class="stat"><div class="slb">Outstanding</div><div class="sv" style="color:var(--amber)">${fmtZAR(out.reduce((s,i)=>s+invTotal(i),0))}</div><div class="ss">${out.length} sent, unpaid</div></div>
+    <div class="stat"><div class="slb">Overdue</div><div class="sv" style="color:${od.length?'var(--red)':'var(--ink4)'}">${od.length}</div><div class="ss">past due date</div></div>
+    <div class="stat"><div class="slb">Collected</div><div class="sv" style="color:var(--green)">${fmtZAR(paid.reduce((s,i)=>s+invTotal(i),0))}</div><div class="ss">${paid.length} paid</div></div>
+    <div class="stat"><div class="slb">Drafts</div><div class="sv">${invs.filter(i=>i.status==='draft').length}</div><div class="ss">not yet sent</div></div>
+  </div>`;
+  renderInvList();
+};
+window.renderInvList=function(){
+  const el=document.getElementById('inv-list');if(!el)return;
+  let list=[...invs];
+  if(window.invF==='overdue')list=list.filter(invOverdue);
+  else if(window.invF)list=list.filter(i=>i.status===window.invF);
+  if(!list.length){el.innerHTML='<div class="empty"><div class="empi">&#82;</div><div class="empt">No invoices'+(window.invF?' in this filter':' yet')+'</div><div class="empd">Click + New invoice to raise one</div></div>';return;}
+  const SC={draft:['var(--paper3)','var(--ink3)'],sent:['var(--amberl)','var(--amber)'],paid:['var(--greenl)','var(--green)']};
+  el.innerHTML=list.map(i=>{
+    const od=invOverdue(i);const sc=SC[i.status]||SC.draft;
+    const tbc=JSON.stringify(i.bill_to||{}).includes('TBC')||(i.line_items||[]).some(l=>(l.desc||'').includes('TBC'));
+    return `<div class="card" style="padding:.9rem 1.1rem${od?';border-left:3px solid var(--red)':''}">
+      <div style="display:flex;align-items:center;gap:.8rem;flex-wrap:wrap">
+        <div style="flex:1;min-width:200px">
+          <div style="font-weight:600;font-size:.92rem;color:var(--ink)">${i.number} &mdash; ${(i.bill_to||{}).company||'&mdash;'}</div>
+          <div style="font-size:.74rem;color:var(--ink3)">Issued ${i.issue_date||'&mdash;'} &middot; due ${i.due_date||'&mdash;'}${od?' &middot; <strong style="color:var(--red)">OVERDUE</strong>':''}${tbc?' &middot; <strong style="color:var(--amber)">&#9888; details TBC</strong>':''}</div>
+        </div>
+        <div style="font-family:var(--serif);font-size:1.2rem;color:var(--bronzed)">${fmtZAR(invTotal(i))}</div>
+        <span class="sb2" style="background:${sc[0]};color:${sc[1]};text-transform:uppercase">${i.status}</span>
+        <div style="display:flex;gap:.35rem;flex-wrap:wrap">
+          <button class="btns" onclick="openInvModal('${i.id}')">&#9998; Edit</button>
+          <button class="btns" onclick="printInv('${i.id}')">&#128424; Print / PDF</button>
+          <button class="btns" onclick="emailInv('${i.id}')">&#9993; Email</button>
+          ${i.status==='draft'?`<button class="btns" onclick="setInvStatus('${i.id}','sent')">Mark sent</button>`:''}
+          ${i.status==='sent'?`<button class="btns" onclick="setInvStatus('${i.id}','paid')" style="color:var(--green)">Mark paid</button>`:''}
+        </div>
+      </div>
+    </div>`;}).join('');
+};
+window.setInvStatus=async(id,status)=>{
+  await sb.from('invoices').update({status}).eq('id',id);
+  const i=invs.find(x=>x.id===id);if(i)i.status=status;
+  renderInvoices();toast('Invoice marked '+status,'ok');
+};
+window.addInvLine=(desc,amount)=>{
+  const box=document.getElementById('i-lines');
+  const row=document.createElement('div');row.className='inv-line';
+  row.innerHTML=`<input class="fi" placeholder="Description" value="${(desc||'').replace(/"/g,'&quot;')}">
+    <input class="fi" type="number" step="0.01" min="0" placeholder="0.00" value="${amount!=null?amount:''}" oninput="updInvTotal()">
+    <button class="btns" onclick="this.parentElement.remove();updInvTotal()" title="Remove line">&times;</button>`;
+  box.appendChild(row);updInvTotal();
+};
+window.updInvTotal=()=>{
+  let s=0;document.querySelectorAll('#i-lines .inv-line input[type=number]').forEach(x=>s+=parseFloat(x.value)||0);
+  const v=parseFloat(document.getElementById('i-vat')?.value)||0;
+  document.getElementById('i-total').textContent=fmtZAR(s*(1+v/100));
+};
+window.openInvModal=(id)=>{
+  if(!invTableOk){toast('Run supabase_invoices_schema.sql first','err');return;}
+  const i=id?invs.find(x=>x.id===id):null;
+  document.getElementById('invmt').textContent=i?'Edit invoice':'New invoice';
+  document.getElementById('invnum-sub').textContent=i?i.number:('Will be numbered '+invNextNumber());
+  document.getElementById('i-id').value=i?i.id:'';
+  const b=i?(i.bill_to||{}):{};
+  document.getElementById('i-company').value=b.company||'';
+  document.getElementById('i-contact').value=b.contact||'';
+  document.getElementById('i-reg').value=b.reg||'';
+  document.getElementById('i-email').value=b.email||'';
+  document.getElementById('i-addr').value=b.addr||'';
+  document.getElementById('i-issue').value=i?(i.issue_date||''):new Date().toISOString().slice(0,10);
+  document.getElementById('i-due').value=i?(i.due_date||''):new Date(Date.now()+14*864e5).toISOString().slice(0,10);
+  document.getElementById('i-status').value=i?i.status:'draft';
+  document.getElementById('i-vat').value=i?String(parseFloat(i.vat_pct)||0):'0';
+  document.getElementById('i-bank').value=i?(i.bank_details||''):(localStorage.getItem('resgro_inv_bank')||'');
+  document.getElementById('i-notes').value=i?(i.notes||''):'Payment due within 14 days of invoice date. Please use the invoice number as payment reference.';
+  document.getElementById('i-lines').innerHTML='';
+  ((i&&i.line_items)||[{desc:'',amount:null}]).forEach(l=>addInvLine(l.desc,l.amount));
+  document.getElementById('i-vat').onchange=updInvTotal;
+  updInvTotal();
+  document.getElementById('invmodal').classList.add('open');
+};
+window.closeInvModal=()=>document.getElementById('invmodal').classList.remove('open');
+window.submitInv=async()=>{
+  const company=document.getElementById('i-company').value.trim();
+  if(!company){toast('Bill-to company is required','err');return;}
+  const id=document.getElementById('i-id').value;
+  const lines=[...document.querySelectorAll('#i-lines .inv-line')].map(r=>{
+    const ins=r.querySelectorAll('input');
+    return {desc:ins[0].value.trim(),amount:parseFloat(ins[1].value)||0};
+  }).filter(l=>l.desc||l.amount);
+  if(!lines.length){toast('Add at least one line item','err');return;}
+  const bank=document.getElementById('i-bank').value;
+  try{localStorage.setItem('resgro_inv_bank',bank);}catch(e){}
+  const row={
+    number:id?(invs.find(x=>x.id===id)||{}).number:invNextNumber(),
+    status:document.getElementById('i-status').value,
+    issue_date:document.getElementById('i-issue').value||null,
+    due_date:document.getElementById('i-due').value||null,
+    currency:'ZAR',vat_pct:parseFloat(document.getElementById('i-vat').value)||0,
+    bill_to:{company,contact:document.getElementById('i-contact').value.trim(),reg:document.getElementById('i-reg').value.trim(),email:document.getElementById('i-email').value.trim(),addr:document.getElementById('i-addr').value.trim()},
+    line_items:lines,bank_details:bank,notes:document.getElementById('i-notes').value,created_by:me.id};
+  const res=id?await sb.from('invoices').update(row).eq('id',id):await sb.from('invoices').insert(row);
+  if(res.error){toast('Save failed: '+res.error.message,'err');return;}
+  const{data}=await sb.from('invoices').select('*').order('number');invs=data||[];
+  closeInvModal();renderInvoices();toast(id?'Invoice updated':'Invoice '+row.number+' created','ok');
+};
+window.printInv=(id)=>{
+  const i=invs.find(x=>x.id===id);if(!i)return;
+  const b=i.bill_to||{};
+  const rows=(i.line_items||[]).map(l=>`<tr><td>${l.desc}</td><td class="amt">${fmtZAR(l.amount)}</td></tr>`).join('');
+  const vatRow=(parseFloat(i.vat_pct)||0)>0?`<tr><td class="tl">VAT @ ${i.vat_pct}%</td><td class="amt">${fmtZAR(invVat(i))}</td></tr>`:'';
+  const w=window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html><head><title>${i.number} — Resgro Capital</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'DM Sans',system-ui,sans-serif;color:#2a3142;padding:48px 56px;font-size:13px;line-height:1.55;background:#fff}
+    .top{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #96785a;padding-bottom:20px;margin-bottom:28px}
+    .logo{font-family:'DM Serif Display',Georgia,serif;font-size:26px}.logo span{color:#96785a}
+    .from{font-size:11px;color:#6b738a;margin-top:6px;line-height:1.6}
+    .inv-t{text-align:right}.inv-t h1{font-family:'DM Serif Display',Georgia,serif;font-size:22px;font-weight:400;letter-spacing:.12em;color:#96785a}
+    .inv-t .num{font-size:15px;font-weight:600;margin-top:2px}
+    .inv-t .dates{font-size:11px;color:#6b738a;margin-top:8px;line-height:1.6}
+    .bill{margin-bottom:28px}
+    .lbl{font-size:9.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#9aa1b3;margin-bottom:4px}
+    .bill .co{font-weight:600;font-size:14px}
+    .bill .sub{font-size:11.5px;color:#6b738a;line-height:1.6}
+    table{width:100%;border-collapse:collapse;margin-bottom:8px}
+    th{text-align:left;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#9aa1b3;padding:8px 10px;border-bottom:1.5px solid #e4e1d6}
+    td{padding:10px;border-bottom:1px solid #f1efe8;font-size:12.5px}
+    .amt{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+    th.amt-h{text-align:right}
+    .tl{text-align:right;color:#6b738a}
+    .tot td{border-top:2px solid #96785a;border-bottom:none;font-weight:600;font-size:15px;padding-top:12px}
+    .tot .amt{color:#7a6147;font-size:17px;font-family:'DM Serif Display',Georgia,serif}
+    .foot{display:flex;gap:40px;margin-top:36px}
+    .foot>div{flex:1}
+    .bank{white-space:pre-line;font-size:11.5px;color:#3c465a;background:#faf8f4;border:1px solid #e4e1d6;border-radius:6px;padding:12px 14px}
+    .notes{font-size:11px;color:#6b738a;line-height:1.6}
+    .vatnote{margin-top:28px;font-size:10px;color:#9aa1b3;border-top:1px solid #f1efe8;padding-top:10px}
+    @media print{body{padding:24px 28px}}
+  </style></head><body>
+  <div class="top">
+    <div><div class="logo">Res<span>gro</span> Capital</div>
+      <div class="from">${RESGRO_FROM.reg} &middot; ${RESGRO_FROM.tax}<br>${RESGRO_FROM.addr}<br>${RESGRO_FROM.email}</div></div>
+    <div class="inv-t"><h1>INVOICE</h1><div class="num">${i.number}</div>
+      <div class="dates">Issue date: ${i.issue_date||'—'}<br>Due date: ${i.due_date||'—'}</div></div>
+  </div>
+  <div class="bill"><div class="lbl">Billed to</div>
+    <div class="co">${b.company||''}</div>
+    <div class="sub">${[b.contact,b.reg,b.addr,b.email].filter(Boolean).join('<br>')}</div></div>
+  <table>
+    <thead><tr><th>Description</th><th class="amt-h">Amount (ZAR)</th></tr></thead>
+    <tbody>${rows}
+      <tr><td class="tl">Subtotal</td><td class="amt">${fmtZAR(invSubtotal(i))}</td></tr>
+      ${vatRow}
+      <tr class="tot"><td class="tl" style="color:#2a3142">Total due</td><td class="amt">${fmtZAR(invTotal(i))}</td></tr>
+    </tbody>
+  </table>
+  <div class="foot">
+    <div><div class="lbl">Payment details</div><div class="bank">${(i.bank_details||'').replace(/</g,'&lt;')}</div></div>
+    <div><div class="lbl">Notes</div><div class="notes">${(i.notes||'').replace(/</g,'&lt;')}</div></div>
+  </div>
+  ${(parseFloat(i.vat_pct)||0)===0?'<div class="vatnote">Resgro Capital (Pty) Ltd is not registered for VAT. No VAT has been charged on this invoice.</div>':''}
+  <script>window.onload=()=>setTimeout(()=>window.print(),300)<\/script>
+  </body></html>`);
+  w.document.close();
+};
+window.emailInv=(id)=>{
+  const i=invs.find(x=>x.id===id);if(!i)return;
+  const b=i.bill_to||{};
+  const subj=encodeURIComponent(i.number+' — Resgro Capital (Pty) Ltd');
+  const body=encodeURIComponent('Hi '+(b.contact||'')+',\n\nPlease find attached invoice '+i.number+' for '+fmtZAR(invTotal(i))+', due '+(i.due_date||'')+'.\n\nBanking details are on the invoice — please use '+i.number+' as the payment reference.\n\nBest regards\nAphile Molefe\nResgro Capital (Pty) Ltd');
+  location.href='mailto:'+(b.email||'')+'?subject='+subj+'&body='+body;
+  toast('Remember to attach the PDF (Print / PDF button)','ok');
+};
+
 function toast(msg,type=''){
   const el=document.getElementById('toast');
   el.textContent=msg;el.className='toast show'+(type?' '+type:'');
