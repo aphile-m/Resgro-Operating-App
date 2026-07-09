@@ -2468,7 +2468,8 @@ function fmtD(iso){try{return new Date(iso).toLocaleDateString('en-GB',{day:'num
 function fmtM(n){if(!n)return'$0';if(n>=1e6)return'$'+(Math.round(n/1e5)/10)+'m';if(n>=1e3)return'$'+Math.round(n/1e3)+'k';return'$'+Math.round(n);}
 function fmtR(n){if(!n)return'R0';if(n>=1e6)return'R'+(Math.round(n/1e5)/10)+'m';if(n>=1e3)return'R'+Math.round(n/1e3)+'k';return'R'+Math.round(n);}
 /* ── INVOICES ──────────────────────────────────────────────────────────── */
-const RESGRO_FROM={name:'Resgro Capital (Pty) Ltd',reg:'CIPC 2026/377574/07',tax:'SARS 9670237206',addr:'99 10th Street, Parkmore, Gauteng 2191',email:'aphilem@gmail.com'};
+const RESGRO_FROM={name:'Resgro Capital (Pty) Ltd',reg:'CIPC 2026/377574/07',tax:'SARS 9670237206',addr:'99 10th Street, Parkmore, Gauteng 2191',email:'aphile@resgrocapital.com'};
+const RESGRO_BANK='Bank: Absa — Current Account\nAccount holder: Resgro Capital (Pty) Ltd\nAccount number: 41-2632-4049\nBranch: Northgate (632005)\nSWIFT: ABSAZAJJ\nReference: [invoice number]';
 const fmtZAR=n=>'R'+(parseFloat(n)||0).toLocaleString('en-ZA',{minimumFractionDigits:2,maximumFractionDigits:2});
 const invSubtotal=inv=>(inv.line_items||[]).reduce((s,l)=>s+(parseFloat(l.amount)||0),0);
 const invVat=inv=>invSubtotal(inv)*((parseFloat(inv.vat_pct)||0)/100);
@@ -2483,7 +2484,7 @@ async function seedInvoices(){
   if(invs.length)return;
   const today=new Date().toISOString().slice(0,10);
   const due=new Date(Date.now()+14*864e5).toISOString().slice(0,10);
-  const bank=localStorage.getItem('resgro_inv_bank')||'Bank: [TBC — add account details]\nAccount name: Resgro Capital (Pty) Ltd\nReference: [invoice number]';
+  const bank=localStorage.getItem('resgro_inv_bank')||RESGRO_BANK;
   const mk=(n,who,co)=>({number:n,status:'draft',issue_date:today,due_date:due,currency:'ZAR',vat_pct:0,
     bill_to:{company:co,contact:who,reg:'',email:'',addr:''},
     line_items:[
@@ -2573,7 +2574,7 @@ window.openInvModal=(id)=>{
   document.getElementById('i-due').value=i?(i.due_date||''):new Date(Date.now()+14*864e5).toISOString().slice(0,10);
   document.getElementById('i-status').value=i?i.status:'draft';
   document.getElementById('i-vat').value=i?String(parseFloat(i.vat_pct)||0):'0';
-  document.getElementById('i-bank').value=i?(i.bank_details||''):(localStorage.getItem('resgro_inv_bank')||'');
+  document.getElementById('i-bank').value=i?(i.bank_details||''):(localStorage.getItem('resgro_inv_bank')||RESGRO_BANK);
   document.getElementById('i-notes').value=i?(i.notes||''):'Payment due within 14 days of invoice date. Please use the invoice number as payment reference.';
   document.getElementById('i-lines').innerHTML='';
   ((i&&i.line_items)||[{desc:'',amount:null}]).forEach(l=>addInvLine(l.desc,l.amount));
