@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Resgro Capital — Operating App</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" id="themecolor" content="#2a3142">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
 <style>
@@ -909,6 +916,9 @@ const SV='11';
 /* Expose Supabase client + auth state to embedded iframes (e.g. P1 model). */
 window.__resgro = { sb, getMe: () => me, getTheme: () => document.documentElement.dataset.theme || 'dark' };
 
+/* PWA: register the service worker (makes the app installable on Android/iOS). */
+if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{});}
+
 /* ── THEME ───────────────────────────────────────────────────────────────────
    Light is the default (every embedded tool is native light); dark is opt-in
    and lifts the P1 model palette across the app. Persisted to localStorage and
@@ -918,6 +928,8 @@ function applyTheme(t){
   document.documentElement.dataset.theme=t;
   const b=document.getElementById('themeBtn');
   if(b)b.innerHTML=t==='dark'?'&#9728;':'&#9789;'; /* sun in dark (→light), moon in light (→dark) */
+  const tc=document.getElementById('themecolor');
+  if(tc)tc.setAttribute('content',t==='dark'?'#0C0C1A':'#2a3142'); /* Android status bar follows the theme */
   try{localStorage.setItem('resgro_theme',t);}catch(e){}
   window.dispatchEvent(new CustomEvent('resgro-theme',{detail:t}));
 }
