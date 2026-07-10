@@ -405,6 +405,22 @@ textarea.fi{resize:vertical;min-height:72px}
 /* ── INVOICES ─────────────────────────────────────────────────────────── */
 .inv-line{display:grid;grid-template-columns:1fr 130px 34px;gap:.5rem;margin-bottom:.5rem;align-items:center}
 .inv-line .btns{padding:.4rem .6rem;line-height:1}
+/* ── AI INVOICE CHAT ──────────────────────────────────────────────────── */
+#ai-msgs{flex:1;min-height:180px;max-height:44vh;overflow-y:auto;padding:.25rem .1rem;display:flex;flex-direction:column;gap:.5rem;margin-bottom:.6rem}
+.ai-m{max-width:88%;padding:.55rem .8rem;border-radius:12px;font-size:.85rem;line-height:1.55;white-space:pre-wrap;word-break:break-word}
+.ai-m.u{align-self:flex-end;background:var(--ink);color:var(--paper);border-bottom-right-radius:4px}
+:root[data-theme="dark"] .ai-m.u{background:var(--gold);color:var(--paper)}
+.ai-m.a{align-self:flex-start;background:var(--paper2);color:var(--ink);border:1px solid var(--paper3);border-bottom-left-radius:4px}
+.ai-m.err{align-self:flex-start;background:var(--redl);color:var(--red);border:1px solid var(--red)}
+.ai-m.busy{align-self:flex-start;color:var(--ink3);background:var(--paper2);border:1px dashed var(--paper3)}
+.ai-m .btns{margin:.4rem .4rem 0 0}
+.ai-att{font-size:.68rem;opacity:.75;margin-top:.25rem}
+.ai-inrow{display:flex;gap:.45rem;align-items:flex-end}
+.ai-inrow textarea{flex:1;min-height:44px;max-height:120px}
+.ai-inrow .btns{padding:.6rem .7rem;font-size:1rem;line-height:1}
+#ai-chips{display:flex;gap:.35rem;flex-wrap:wrap;margin-bottom:.4rem}
+.ai-chip{display:flex;align-items:center;gap:.35rem;font-size:.7rem;background:var(--purplel);color:var(--purple);padding:.2rem .55rem;border-radius:99px}
+.ai-chip b{cursor:pointer}
 </style>
 </head>
 <body>
@@ -549,7 +565,10 @@ textarea.fi{resize:vertical;min-height:72px}
     <div class="view" id="v-invoices">
       <div class="pgh" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem">
         <div><div class="pgt">Invoices</div><div class="pgs">Fee invoicing &amp; receivables &mdash; Resgro Capital (Pty) Ltd</div></div>
-        <button class="btnadd" onclick="openInvModal()">+ New invoice</button>
+        <div style="display:flex;gap:.5rem;margin-left:auto">
+          <button class="btnadd" style="background:var(--purple)" onclick="openInvAI()">&#10024; AI invoice</button>
+          <button class="btnadd" onclick="openInvModal()">+ New invoice</button>
+        </div>
       </div>
       <div id="inv-stats"></div>
       <div class="fbar">
@@ -852,6 +871,30 @@ textarea.fi{resize:vertical;min-height:72px}
     <div class="fg"><label class="fl">Banking details (shown on the invoice)</label><textarea class="fi" id="i-bank" placeholder="Bank / account name / account no / branch code / reference"></textarea></div>
     <div class="fg"><label class="fl">Notes</label><textarea class="fi" id="i-notes" placeholder="Payment terms, references, context..."></textarea></div>
     <div class="macts"><button class="btnp" onclick="submitInv()" style="flex:1" id="i-submit-btn">Save invoice</button><button class="btns" onclick="closeInvModal()">Cancel</button></div>
+  </div>
+</div>
+
+<!-- AI INVOICE MODAL -->
+<div class="mov" id="aimodal">
+  <div class="modal" style="max-width:640px;display:flex;flex-direction:column;max-height:85vh">
+    <div class="mtitle">&#10024; AI invoice assistant</div>
+    <div class="msub">Describe the invoice, upload a file, or paste an image &mdash; I&rsquo;ll draft it and ask if anything is unclear</div>
+    <div id="ai-key-setup" style="display:none">
+      <div class="cw" style="margin:0 0 .75rem">To use the AI assistant, add your Anthropic API key (stored only on this device). Get one at <strong>platform.claude.com</strong>.</div>
+      <div class="fg"><label class="fl">Anthropic API key</label><input class="fi" type="password" id="ai-key" placeholder="sk-ant-..."></div>
+      <button class="btnp" onclick="aiKeySave()">Save key &amp; start</button>
+    </div>
+    <div id="ai-chat" style="display:none;flex-direction:column;min-height:0;flex:1">
+      <div id="ai-msgs"></div>
+      <div id="ai-chips"></div>
+      <div class="ai-inrow">
+        <button class="btns" title="Attach file (image, PDF, text, CSV)" onclick="document.getElementById('ai-file').click()">&#128206;</button>
+        <input type="file" id="ai-file" multiple accept="image/*,.pdf,.txt,.csv,.md" style="display:none" onchange="aiFilesPicked(this.files);this.value=''">
+        <textarea class="fi" id="ai-input" rows="2" placeholder="e.g. Invoice Acme (Pty) Ltd R25,000 for advisory retainer, due end of month... (paste an image or drop a file)"></textarea>
+        <button class="btnp" id="ai-send" style="width:auto;padding:.65rem 1rem" onclick="aiSend()">Send</button>
+      </div>
+    </div>
+    <div class="macts" style="margin-top: .75rem"><button class="btns" onclick="closeInvAI()">Close</button><button class="btns" onclick="aiReset()" title="Clear the conversation">&#8635; New conversation</button></div>
   </div>
 </div>
 
@@ -2677,6 +2720,223 @@ window.emailInv=(id)=>{
   location.href='mailto:'+(b.email||'')+'?subject='+subj+'&body='+body;
   toast('Remember to attach the PDF (Print / PDF button)','ok');
 };
+
+/* ── AI INVOICE ASSISTANT ──────────────────────────────────────────────────
+   Chat interface over the Claude API (claude-opus-4-8, official SDK loaded on
+   demand from esm.sh with browser access enabled). The model gathers invoice
+   details from typed text, uploaded files (images / PDFs / text), or pasted
+   images, asks clarifying questions, and creates the draft via a
+   create_invoice_draft tool that writes to Supabase. The API key is the
+   user's own, stored only in localStorage on this device. */
+const AI={msgs:[],atts:[],Anthropic:null,client:null,busy:false,bound:false};
+const AI_MODEL='claude-opus-4-8';
+const AI_TOOL={
+  name:'create_invoice_draft',
+  description:'Create a draft invoice in the Resgro invoicing system. Call this only once you have, at minimum, the bill-to company name and at least one line item with a real amount. Never invent amounts — if an amount is unknown, ask the user instead.',
+  input_schema:{
+    type:'object',
+    properties:{
+      company:{type:'string',description:'Bill-to company name (required)'},
+      contact:{type:'string',description:'Contact person at the company'},
+      reg:{type:'string',description:'Company registration number'},
+      email:{type:'string',description:'Billing email address'},
+      addr:{type:'string',description:'Postal/street address'},
+      issue_date:{type:'string',description:'Issue date YYYY-MM-DD (default today)'},
+      due_date:{type:'string',description:'Due date YYYY-MM-DD (default 14 days from issue)'},
+      vat_pct:{type:'number',description:'VAT percent. 0 = not VAT registered (the default). 15 only if the user says Resgro is VAT registered.'},
+      line_items:{type:'array',description:'Invoice lines',items:{type:'object',properties:{
+        desc:{type:'string',description:'Line description'},
+        amount:{type:'number',description:'Line amount in ZAR (rands, not cents)'}
+      },required:['desc','amount']}},
+      notes:{type:'string',description:'Notes / payment terms shown on the invoice'}
+    },
+    required:['company','line_items']
+  }
+};
+function aiSystem(){
+  const today=new Date().toISOString().slice(0,10);
+  const due=new Date(Date.now()+14*864e5).toISOString().slice(0,10);
+  const existing=invs.slice(0,20).map(i=>`${i.number} — ${(i.bill_to||{}).company||'?'} — ${fmtZAR(invTotal(i))} — ${i.status}`).join('\n')||'(none)';
+  return `You are the invoicing assistant inside the Resgro Capital operating app, used by Aphile Molefe (sole director).
+
+Issuer details (already on every invoice — never ask for these):
+${RESGRO_FROM.name} · ${RESGRO_FROM.reg} · ${RESGRO_FROM.tax} · ${RESGRO_FROM.addr} · ${RESGRO_FROM.email}
+Banking: Absa current account 41-2632-4049, Northgate (632005), SWIFT ABSAZAJJ.
+
+Today is ${today}. The next invoice number is assigned automatically. Currency is ZAR (South African Rand). Default due date is ${due} (14 days). Resgro is NOT VAT registered — vat_pct 0 — unless the user explicitly says otherwise.
+
+Existing invoices (for reference, avoid duplicates):
+${existing}
+
+Your job: turn the user's description, uploaded documents, or pasted images (quotes, emails, spreadsheets, old invoices) into a draft invoice.
+- Extract bill-to details and line items faithfully from any attachment.
+- NEVER invent or guess amounts. If an amount, company name, or what the invoice is for is missing or ambiguous, ask — briefly and specifically, one message with all your questions at once.
+- When you have enough (company + at least one line with a real amount), call create_invoice_draft. One call per invoice; multiple invoices are fine if the user asks.
+- After creating, confirm in one short sentence. The app shows the user edit/print buttons — do not describe how to find the invoice.
+- Keep replies short and businesslike. Amounts in rands, e.g. R33,333.33.`;
+}
+window.openInvAI=()=>{
+  if(!invTableOk){toast('Run supabase_invoices_schema.sql first','err');return;}
+  document.getElementById('aimodal').classList.add('open');
+  const hasKey=!!localStorage.getItem('resgro_anthropic_key');
+  document.getElementById('ai-key-setup').style.display=hasKey?'none':'block';
+  document.getElementById('ai-chat').style.display=hasKey?'flex':'none';
+  if(!AI.bound){
+    AI.bound=true;
+    const inp=document.getElementById('ai-input');
+    inp.addEventListener('paste',e=>{
+      const items=[...(e.clipboardData?.items||[])].filter(x=>x.kind==='file');
+      if(items.length){e.preventDefault();items.forEach(x=>{const f=x.getAsFile();if(f)aiAddFile(f);});}
+    });
+    inp.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();aiSend();}});
+  }
+  if(hasKey&&!document.getElementById('ai-msgs').childElementCount)
+    aiBubble('a','Hi! Describe the invoice you need — or upload / paste a quote, email or image — and I’ll draft it. I’ll ask if anything’s unclear.');
+};
+window.closeInvAI=()=>document.getElementById('aimodal').classList.remove('open');
+window.aiReset=()=>{AI.msgs=[];AI.atts=[];document.getElementById('ai-msgs').innerHTML='';aiChips();
+  if(localStorage.getItem('resgro_anthropic_key'))aiBubble('a','Fresh start — what should this invoice cover?');};
+window.aiKeySave=()=>{
+  const k=document.getElementById('ai-key').value.trim();
+  if(!k.startsWith('sk-ant-')){toast('That does not look like an Anthropic API key','err');return;}
+  localStorage.setItem('resgro_anthropic_key',k);AI.client=null;
+  document.getElementById('ai-key-setup').style.display='none';
+  document.getElementById('ai-chat').style.display='flex';
+  aiBubble('a','Key saved on this device. Describe the invoice you need — or upload / paste a document — and I’ll draft it.');
+};
+const aiEsc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+function aiBubble(kind,text,html){
+  const box=document.getElementById('ai-msgs');
+  const d=document.createElement('div');
+  d.className='ai-m '+(kind==='u'?'u':kind==='err'?'err':kind==='busy'?'busy':'a');
+  if(html)d.innerHTML=html;else d.textContent=text;
+  box.appendChild(d);box.scrollTop=box.scrollHeight;
+  return d;
+}
+function aiChips(){
+  document.getElementById('ai-chips').innerHTML=AI.atts.map((a,i)=>
+    `<span class="ai-chip">${a.icon} ${aiEsc(a.name)}<b onclick="AI.atts.splice(${i},1);aiChips()" title="Remove">&times;</b></span>`).join('');
+}
+function aiFileB64(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(String(r.result).split(',')[1]);r.onerror=rej;r.readAsDataURL(file);});}
+function aiImgBlock(file){return new Promise((res,rej)=>{
+  const img=new Image();
+  img.onload=()=>{
+    const MAX=1600;let w=img.naturalWidth,h=img.naturalHeight;
+    const s=Math.min(1,MAX/Math.max(w,h));w=Math.round(w*s);h=Math.round(h*s);
+    const c=document.createElement('canvas');c.width=w;c.height=h;
+    c.getContext('2d').drawImage(img,0,0,w,h);
+    URL.revokeObjectURL(img.src);
+    res({type:'image',source:{type:'base64',media_type:'image/jpeg',data:c.toDataURL('image/jpeg',.9).split(',')[1]}});
+  };
+  img.onerror=rej;
+  img.src=URL.createObjectURL(file);
+});}
+window.aiFilesPicked=(files)=>{[...files].forEach(f=>aiAddFile(f));};
+async function aiAddFile(f){
+  try{
+    if(f.size>8*1024*1024){toast('File too large (max 8MB): '+f.name,'err');return;}
+    if(f.type.startsWith('image/')){
+      AI.atts.push({name:f.name||'pasted image',icon:'&#128444;',block:await aiImgBlock(f)});
+    }else if(f.type==='application/pdf'||/\.pdf$/i.test(f.name)){
+      AI.atts.push({name:f.name,icon:'&#128196;',block:{type:'document',source:{type:'base64',media_type:'application/pdf',data:await aiFileB64(f)}}});
+    }else{
+      const text=await f.text();
+      if(text.length>200000){toast('Text file too long: '+f.name,'err');return;}
+      AI.atts.push({name:f.name,icon:'&#128441;',block:{type:'text',text:'[Attached file: '+f.name+']\n'+text}});
+    }
+    aiChips();
+  }catch(e){toast('Could not read '+f.name,'err');}
+}
+async function aiClient(){
+  if(AI.client)return AI.client;
+  if(!AI.Anthropic){
+    const mod=await import('https://esm.sh/@anthropic-ai/sdk@0.110.0');
+    AI.Anthropic=mod.default;
+  }
+  AI.client=new AI.Anthropic({apiKey:localStorage.getItem('resgro_anthropic_key'),dangerouslyAllowBrowser:true});
+  return AI.client;
+}
+async function aiCreateInvoice(input){
+  const lines=(input.line_items||[]).map(l=>({desc:String(l.desc||''),amount:parseFloat(l.amount)||0})).filter(l=>l.desc);
+  if(!input.company||!lines.length)return{ok:false,msg:'Missing company or line items — ask the user.'};
+  const issue=input.issue_date||new Date().toISOString().slice(0,10);
+  const row={
+    number:invNextNumber(),status:'draft',issue_date:issue,
+    due_date:input.due_date||new Date(new Date(issue).getTime()+14*864e5).toISOString().slice(0,10),
+    currency:'ZAR',vat_pct:parseFloat(input.vat_pct)||0,
+    bill_to:{company:String(input.company),contact:String(input.contact||''),reg:String(input.reg||''),email:String(input.email||''),addr:String(input.addr||'')},
+    line_items:lines,
+    bank_details:localStorage.getItem('resgro_inv_bank')||RESGRO_BANK,
+    notes:String(input.notes||'Payment due within 14 days of invoice date. Please use the invoice number as payment reference.'),
+    created_by:me.id};
+  const res=await sb.from('invoices').insert(row).select().single();
+  if(res.error)return{ok:false,msg:'Database error: '+res.error.message};
+  const{data}=await sb.from('invoices').select('*').order('number');invs=data||[];
+  renderInvoices();
+  return{ok:true,id:res.data.id,number:row.number,total:invTotal(row)};
+}
+window.aiSend=async()=>{
+  if(AI.busy)return;
+  const inp=document.getElementById('ai-input');
+  const text=inp.value.trim();
+  if(!text&&!AI.atts.length)return;
+  const content=AI.atts.map(a=>a.block);
+  const shown=text||'Draft an invoice from the attached document(s).';
+  content.push({type:'text',text:shown});
+  const attNote=AI.atts.length?`<div class="ai-att">&#128206; ${AI.atts.map(a=>aiEsc(a.name)).join(', ')}</div>`:'';
+  aiBubble('u',null,aiEsc(shown)+attNote);
+  AI.msgs.push({role:'user',content});
+  inp.value='';AI.atts=[];aiChips();
+  await aiLoop();
+};
+async function aiLoop(){
+  AI.busy=true;
+  document.getElementById('ai-send').disabled=true;
+  const busy=aiBubble('busy','Thinking…');
+  try{
+    const client=await aiClient();
+    const created=[];
+    for(let iter=0;iter<6;iter++){
+      const resp=await client.messages.create({
+        model:AI_MODEL,max_tokens:16000,
+        system:aiSystem(),tools:[AI_TOOL],
+        messages:AI.msgs});
+      AI.msgs.push({role:'assistant',content:resp.content});
+      for(const block of resp.content){
+        if(block.type==='text'&&block.text.trim())aiBubble('a',block.text.trim());
+      }
+      if(resp.stop_reason!=='tool_use')break;
+      const results=[];
+      for(const block of resp.content){
+        if(block.type!=='tool_use')continue;
+        const out=await aiCreateInvoice(block.input||{});
+        if(out.ok)created.push(out);
+        results.push({type:'tool_result',tool_use_id:block.id,content:out.ok?
+          `Created ${out.number} for ${fmtZAR(out.total)} (status: draft).`:out.msg,is_error:!out.ok});
+      }
+      AI.msgs.push({role:'user',content:results});
+    }
+    for(const c of created){
+      aiBubble('a',null,`<strong>${c.number}</strong> &middot; ${fmtZAR(c.total)} &middot; draft
+        <div><button class="btns" onclick="closeInvAI();openInvModal('${c.id}')">&#9998; Review &amp; edit</button>
+        <button class="btns" onclick="printInv('${c.id}')">&#128424; Print / PDF</button></div>`);
+    }
+  }catch(err){
+    let msg='Something went wrong: '+(err?.message||err);
+    if(AI.Anthropic&&err instanceof AI.Anthropic.AuthenticationError){
+      msg='Your API key was rejected. Re-enter it to continue.';
+      localStorage.removeItem('resgro_anthropic_key');AI.client=null;
+      document.getElementById('ai-key-setup').style.display='block';
+    }else if(AI.Anthropic&&err instanceof AI.Anthropic.RateLimitError){
+      msg='Rate limited by the API — wait a moment and try again.';
+    }
+    aiBubble('err',msg);
+  }finally{
+    busy.remove();
+    AI.busy=false;
+    document.getElementById('ai-send').disabled=false;
+  }
+}
 
 function toast(msg,type=''){
   const el=document.getElementById('toast');
