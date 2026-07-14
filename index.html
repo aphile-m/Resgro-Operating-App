@@ -584,6 +584,7 @@ textarea.fi{resize:vertical;min-height:72px}
         <button class="fbtn" onclick="window.invF='sent';renderInvList();document.querySelectorAll('#v-invoices .fbtn').forEach(b=>b.classList.remove('on'));this.classList.add('on')">Sent</button>
         <button class="fbtn" onclick="window.invF='paid';renderInvList();document.querySelectorAll('#v-invoices .fbtn').forEach(b=>b.classList.remove('on'));this.classList.add('on')">Paid</button>
         <button class="fbtn" onclick="window.invF='overdue';renderInvList();document.querySelectorAll('#v-invoices .fbtn').forEach(b=>b.classList.remove('on'));this.classList.add('on')">Overdue</button>
+        <button class="fbtn" onclick="window.invF='archived';renderInvList();document.querySelectorAll('#v-invoices .fbtn').forEach(b=>b.classList.remove('on'));this.classList.add('on')">&#128451; Archived</button>
       </div>
       <div id="inv-list"></div>
     </div>
@@ -2574,47 +2575,88 @@ async function seedInvoices(){
 window.renderInvoices=function(){
   const st=document.getElementById('inv-stats');
   if(!invTableOk){st.innerHTML='<div class="cw" style="margin-bottom:1rem"><strong>Invoices table not found.</strong> Run <code>supabase_invoices_schema.sql</code> in the Supabase SQL Editor, then reload.</div>';document.getElementById('inv-list').innerHTML='';return;}
-  const out=invs.filter(i=>i.status==='sent');
-  const od=invs.filter(invOverdue);
-  const paid=invs.filter(i=>i.status==='paid');
+  const act=invs.filter(i=>!i.archived_at);
+  const out=act.filter(i=>i.status==='sent');
+  const od=act.filter(invOverdue);
+  const paid=act.filter(i=>i.status==='paid');
   st.innerHTML=`<div class="stats">
     <div class="stat"><div class="slb">Outstanding</div><div class="sv" style="color:var(--amber)">${fmtZAR(out.reduce((s,i)=>s+invBalance(i),0))}</div><div class="ss">balance across ${out.length} sent</div></div>
     <div class="stat"><div class="slb">Overdue</div><div class="sv" style="color:${od.length?'var(--red)':'var(--ink4)'}">${od.length}</div><div class="ss">past due date</div></div>
-    <div class="stat"><div class="slb">Collected</div><div class="sv" style="color:var(--green)">${fmtZAR(invs.reduce((s,i)=>s+invPaidAmt(i),0))}</div><div class="ss">${paid.length} settled in full</div></div>
-    <div class="stat"><div class="slb">Drafts</div><div class="sv">${invs.filter(i=>i.status==='draft').length}</div><div class="ss">not yet sent</div></div>
+    <div class="stat"><div class="slb">Collected</div><div class="sv" style="color:var(--green)">${fmtZAR(act.reduce((s,i)=>s+invPaidAmt(i),0))}</div><div class="ss">${paid.length} settled in full</div></div>
+    <div class="stat"><div class="slb">Drafts</div><div class="sv">${act.filter(i=>i.status==='draft').length}</div><div class="ss">not yet sent</div></div>
   </div>`;
   renderInvList();
 };
 window.renderInvList=function(){
   const el=document.getElementById('inv-list');if(!el)return;
-  let list=[...invs];
-  if(window.invF==='overdue')list=list.filter(invOverdue);
-  else if(window.invF)list=list.filter(i=>i.status===window.invF);
-  if(!list.length){el.innerHTML='<div class="empty"><div class="empi">&#82;</div><div class="empt">No invoices'+(window.invF?' in this filter':' yet')+'</div><div class="empd">Click + New invoice to raise one</div></div>';return;}
+  let list;
+  if(window.invF==='archived')list=invs.filter(i=>i.archived_at);
+  else{
+    list=invs.filter(i=>!i.archived_at);
+    if(window.invF==='overdue')list=list.filter(invOverdue);
+    else if(window.invF)list=list.filter(i=>i.status===window.invF);
+  }
+  if(!list.length){el.innerHTML='<div class="empty"><div class="empi">&#82;</div><div class="empt">No invoices'+(window.invF?' in this filter':' yet')+'</div><div class="empd">'+(window.invF==='archived'?'Archived invoices land here':'Click + New invoice to raise one')+'</div></div>';return;}
   const SC={draft:['var(--paper3)','var(--ink3)'],sent:['var(--amberl)','var(--amber)'],paid:['var(--greenl)','var(--green)']};
   el.innerHTML=list.map(i=>{
-    const od=invOverdue(i);const sc=SC[i.status]||SC.draft;
+    const arch=!!i.archived_at;
+    const od=!arch&&invOverdue(i);const sc=SC[i.status]||SC.draft;
     const paidAmt=invPaidAmt(i);const partial=i.status==='sent'&&paidAmt>0;
     const tbc=JSON.stringify(i.bill_to||{}).includes('TBC')||(i.line_items||[]).some(l=>(l.desc||'').includes('TBC'));
     const payLine=i.status==='paid'?` &middot; <strong style="color:var(--green)">Paid ${fmtZAR(paidAmt)}${i.paid_date?' on '+i.paid_date:''}</strong>`
       :partial?` &middot; <strong style="color:var(--amber)">${fmtZAR(paidAmt)} paid &middot; ${fmtZAR(invBalance(i))} due</strong>`:'';
-    return `<div class="card" style="padding:.9rem 1.1rem${od?';border-left:3px solid var(--red)':''}">
+    return `<div class="card" style="padding:.9rem 1.1rem;cursor:pointer${od?';border-left:3px solid var(--red)':''}${arch?';opacity:.65':''}" onclick="openInvModal('${i.id}')" title="Click to edit">
       <div style="display:flex;align-items:center;gap:.8rem;flex-wrap:wrap">
         <div style="flex:1;min-width:200px">
           <div style="font-weight:600;font-size:.92rem;color:var(--ink)">${i.number} &mdash; ${(i.bill_to||{}).company||'&mdash;'}</div>
-          <div style="font-size:.74rem;color:var(--ink3)">Issued ${i.issue_date||'&mdash;'} &middot; due ${i.due_date||'&mdash;'}${od?' &middot; <strong style="color:var(--red)">OVERDUE</strong>':''}${payLine}${tbc?' &middot; <strong style="color:var(--amber)">&#9888; details TBC</strong>':''}</div>
+          <div style="font-size:.74rem;color:var(--ink3)">Issued ${i.issue_date||'&mdash;'} &middot; due ${i.due_date||'&mdash;'}${od?' &middot; <strong style="color:var(--red)">OVERDUE</strong>':''}${payLine}${arch?' &middot; archived '+String(i.archived_at).slice(0,10):''}${tbc?' &middot; <strong style="color:var(--amber)">&#9888; details TBC</strong>':''}</div>
         </div>
         <div style="font-family:var(--serif);font-size:1.2rem;color:var(--bronzed)">${fmtZAR(invTotal(i))}</div>
         <span class="sb2" style="background:${partial?'var(--amberl)':sc[0]};color:${partial?'var(--amber)':sc[1]};text-transform:uppercase">${partial?'part-paid':i.status}</span>
-        <div style="display:flex;gap:.35rem;flex-wrap:wrap">
-          <button class="btns" onclick="openInvModal('${i.id}')">&#9998; Edit</button>
-          <button class="btns" onclick="printInv('${i.id}')">&#128424; Print / PDF</button>
-          <button class="btns" onclick="emailInv('${i.id}')">&#9993; Email</button>
-          ${i.status==='draft'?`<button class="btns" onclick="setInvStatus('${i.id}','sent')">Mark sent</button>`:''}
-          ${i.status==='sent'?`<button class="btns" onclick="openPayModal('${i.id}')" style="color:var(--green)">&#10003; Record payment</button>`:''}
+        <div style="display:flex;gap:.35rem;flex-wrap:wrap" onclick="event.stopPropagation()">
+          <button class="btns" onclick="printInv('${i.id}')" title="Print / save as PDF">&#128424;</button>
+          <button class="btns" onclick="emailInv('${i.id}')" title="Email">&#9993;</button>
+          <button class="btns" onclick="duplicateInv('${i.id}')" title="Duplicate as new draft">&#10697;</button>
+          ${!arch&&i.status==='draft'?`<button class="btns" onclick="setInvStatus('${i.id}','sent')">Mark sent</button>`:''}
+          ${!arch&&i.status==='sent'?`<button class="btns" onclick="openPayModal('${i.id}')" style="color:var(--green)">&#10003; Record payment</button>`:''}
+          <button class="btns" onclick="archiveInv('${i.id}',${arch?'false':'true'})" title="${arch?'Restore from archive':'Archive'}">${arch?'&#8617; Restore':'&#128451;'}</button>
+          ${arch?`<button class="btns" onclick="deleteInv('${i.id}')" style="color:var(--red)" title="Delete permanently">&#128465;</button>`:''}
         </div>
       </div>
     </div>`;}).join('');
+};
+window.archiveInv=async(id,on)=>{
+  const archived_at=on?new Date().toISOString():null;
+  const res=await sb.from('invoices').update({archived_at}).eq('id',id);
+  if(res.error){toast('Failed: '+res.error.message,'err');return;}
+  const i=invs.find(x=>x.id===id);if(i)i.archived_at=archived_at;
+  renderInvoices();toast(on?'Invoice archived':'Invoice restored','ok');
+};
+window.deleteInv=async(id)=>{
+  const i=invs.find(x=>x.id===id);if(!i)return;
+  if(!confirm('Permanently delete '+i.number+' ('+((i.bill_to||{}).company||'')+')? This cannot be undone.'))return;
+  const res=await sb.from('invoices').delete().eq('id',id);
+  if(res.error){toast('Delete failed: '+res.error.message,'err');return;}
+  invs=invs.filter(x=>x.id!==id);
+  renderInvoices();toast('Invoice '+i.number+' deleted','ok');
+};
+window.duplicateInv=async(id)=>{
+  const src=invs.find(x=>x.id===id);if(!src)return;
+  const issue=new Date().toISOString().slice(0,10);
+  const row={
+    number:invNextNumber(),status:'draft',issue_date:issue,
+    due_date:new Date(Date.now()+14*864e5).toISOString().slice(0,10),
+    currency:src.currency||'ZAR',vat_pct:parseFloat(src.vat_pct)||0,
+    bill_to:{...(src.bill_to||{})},
+    line_items:(src.line_items||[]).map(l=>({...l})),
+    bank_details:src.bank_details||localStorage.getItem('resgro_inv_bank')||RESGRO_BANK,
+    notes:src.notes||'',paid_amount:null,paid_date:null,archived_at:null,
+    created_by:me.id};
+  const res=await sb.from('invoices').insert(row).select().single();
+  if(res.error){toast('Duplicate failed: '+res.error.message,'err');return;}
+  const{data}=await sb.from('invoices').select('*').order('number');invs=data||[];
+  renderInvoices();toast(row.number+' created from '+src.number,'ok');
+  openInvModal(res.data.id);
 };
 window.setInvStatus=async(id,status)=>{
   await sb.from('invoices').update({status}).eq('id',id);
@@ -2821,10 +2863,27 @@ const AI_TOOL={
     required:['company','line_items']
   }
 };
+function aiCustomerDir(){
+  /* Known-customer memory: newest invoice per company wins; merges in older
+     non-empty fields so details stick once captured anywhere. */
+  const dir=new Map();
+  [...invs].reverse().forEach(i=>{
+    const b=i.bill_to||{};const name=(b.company||'').trim();
+    if(!name||name.includes('TBC'))return;
+    const key=name.toLowerCase();
+    const c=dir.get(key)||{company:name,contact:'',reg:'',email:'',addr:'',last:'',lines:[]};
+    ['contact','reg','email','addr'].forEach(k=>{if(!c[k]&&b[k])c[k]=b[k];});
+    if(!c.last){c.last=`${i.number} (${i.issue_date||'?'})`;c.lines=(i.line_items||[]).slice(0,3).map(l=>`${l.desc} — ${fmtZAR(l.amount)}`);}
+    dir.set(key,c);
+  });
+  return [...dir.values()].slice(0,15).map(c=>
+    `• ${c.company}${c.contact?' | contact: '+c.contact:''}${c.reg?' | reg: '+c.reg:''}${c.email?' | email: '+c.email:''}${c.addr?' | address: '+c.addr:''}\n  last invoice: ${c.last}${c.lines.length?' — '+c.lines.join('; '):''}`
+  ).join('\n')||'(no customers yet)';
+}
 function aiSystem(){
   const today=new Date().toISOString().slice(0,10);
   const due=new Date(Date.now()+14*864e5).toISOString().slice(0,10);
-  const existing=invs.slice(0,20).map(i=>`${i.number} — ${(i.bill_to||{}).company||'?'} — ${fmtZAR(invTotal(i))} — ${i.status}${invPaidAmt(i)>0?` (paid ${fmtZAR(invPaidAmt(i))}${invBalance(i)>0?', '+fmtZAR(invBalance(i))+' due':''})`:''}`).join('\n')||'(none)';
+  const existing=invs.filter(i=>!i.archived_at).slice(0,20).map(i=>`${i.number} — ${(i.bill_to||{}).company||'?'} — ${fmtZAR(invTotal(i))} — ${i.status}${invPaidAmt(i)>0?` (paid ${fmtZAR(invPaidAmt(i))}${invBalance(i)>0?', '+fmtZAR(invBalance(i))+' due':''})`:''}`).join('\n')||'(none)';
   return `You are the invoicing assistant inside the Resgro Capital operating app, used by Aphile Molefe (sole director).
 
 Issuer details (already on every invoice — never ask for these):
@@ -2833,10 +2892,14 @@ Banking: Absa current account 41-2632-4049, Northgate (632005), SWIFT ABSAZAJJ.
 
 Today is ${today}. The next invoice number is assigned automatically. Currency is ZAR (South African Rand). Default due date is ${due} (14 days). Resgro is NOT VAT registered — vat_pct 0 — unless the user explicitly says otherwise.
 
+Known customers (from prior invoices — reuse these details, do NOT re-ask for them):
+${aiCustomerDir()}
+
 Existing invoices (for reference, avoid duplicates):
 ${existing}
 
 Your job: turn the user's description, uploaded documents, or pasted images (quotes, emails, spreadsheets, old invoices) into a draft invoice.
+- When the user names a known customer (even loosely, e.g. just "Kgabi" or a partial company name), match them to the directory above and fill in company, contact, reg, email and address automatically — only ask about the details that are genuinely new for this invoice (usually just what it's for and the amount). Their last invoice's line items are listed as a hint for repeat billing like retainers.
 - Extract bill-to details and line items faithfully from any attachment.
 - NEVER invent or guess amounts. If an amount, company name, or what the invoice is for is missing or ambiguous, ask — briefly and specifically, one message with all your questions at once.
 - When you have enough (company + at least one line with a real amount), call create_invoice_draft. One call per invoice; multiple invoices are fine if the user asks.
