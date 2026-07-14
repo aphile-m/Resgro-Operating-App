@@ -1,0 +1,94 @@
+// Supabase Edge Function: send-invoice
+// Emails an invoice PDF to the billed entity via Resend. The Resend API key
+// lives only in this function's secrets — never in the browser.
+//
+// Deploy:   via MCP/CLI, or paste into Dashboard → Edge Functions → New function
+// Secrets:  RESEND_API_KEY  (required — from resend.com)
+//           INVOICE_FROM    (optional — default "Resgro Capital <invoices@resgrocapital.com>")
+//           INVOICE_BCC     (optional — e.g. aphile@resgrocapital.com to keep a copy)
+//
+// JWT verification is ON (default): only signed-in app users can invoke this.
+
+const CORS: Record<string, string> = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
+function json(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...CORS, "Content-Type": "application/json" },
+  });
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
+  if (req.method !== "POST") return json({ error: "POST only" }, 405);
+
+  let payload: {
+    to?: string;
+    subject?: string;
+    html?: string;
+    text?: string;
+    pdf_base64?: string;
+    filename?: string;
+  };
+  try {
+    payload = await req.json();
+  } catch {
+    return json({ error: "Invalid JSON body" }, 400);
+  }
+
+  const { to, subject, html, text, pdf_base64, filename } = payload;
+  if (!to || !subject || !pdf_base64) {
+    return json({ error: "Missing required fields: to, subject, pdf_base64" }, 400);
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) {
+    return json({ error: "Invalid recipient email address" }, 400);
+  }
+  // ~10MB decoded ceiling — invoices are ~20-50KB, so this is generous.
+  if (pdf_base64.length > 14_000_000) {
+    return json({ error: "Attachment too large" }, 413);
+  }
+
+  const key = Deno.env.get("RESEND_API_KEY");
+  if (!key) {
+    return json(
+      { error: "RESEND_API_KEY is not configured — add it under Edge Function secrets" },
+      500,
+    );
+  }
+  const from =
+    Deno.env.get("INVOICE_FROM") ?? "Resgro Capital <invoices@resgrocapital.com>";
+  const bcc = Deno.env.get("INVOICE_BCC") || undefined;
+
+  const r = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${key}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from,
+      to: [to],
+      ...(bcc ? { bcc: [bcc] } : {}),
+      subject,
+      html: html || undefined,
+      text: text || undefined,
+      attachments: [
+        { filename: filename || "invoice.pdf", content: pdf_base64 },
+      ],
+    }),
+  });
+
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) {
+    return json(
+      { error: (data as { message?: string })?.message || `Resend error (${r.status})` },
+      r.status,
+    );
+  }
+  return json({ ok: true, id: (data as { id?: string })?.id });
+});
