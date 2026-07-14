@@ -870,6 +870,8 @@ textarea.fi{resize:vertical;min-height:72px}
         <option value="0">Not VAT registered — no VAT</option>
         <option value="15">Add 15% VAT</option>
       </select></div>
+      <div class="fg"><label class="fl">Amount paid to date (R)</label><input class="fi" type="number" id="i-paid" step="0.01" min="0" placeholder="0.00"></div>
+      <div class="fg"><label class="fl">Last payment date</label><input class="fi" type="date" id="i-paiddate"></div>
     </div>
     <div class="slbl2">Line items</div>
     <div id="i-lines"></div>
@@ -878,6 +880,18 @@ textarea.fi{resize:vertical;min-height:72px}
     <div class="fg"><label class="fl">Banking details (shown on the invoice)</label><textarea class="fi" id="i-bank" placeholder="Bank / account name / account no / branch code / reference"></textarea></div>
     <div class="fg"><label class="fl">Notes</label><textarea class="fi" id="i-notes" placeholder="Payment terms, references, context..."></textarea></div>
     <div class="macts"><button class="btnp" onclick="submitInv()" style="flex:1" id="i-submit-btn">Save invoice</button><button class="btns" onclick="closeInvModal()">Cancel</button></div>
+  </div>
+</div>
+
+<!-- RECORD PAYMENT MODAL -->
+<div class="mov" id="paymodal">
+  <div class="modal" style="max-width:420px">
+    <div class="mtitle">Record payment</div>
+    <div class="msub" id="pay-sub"></div>
+    <input type="hidden" id="p-id">
+    <div class="fg"><label class="fl">Amount received (R) *</label><input class="fi" type="number" id="p-amt" step="0.01" min="0"></div>
+    <div class="fg"><label class="fl">Payment date</label><input class="fi" type="date" id="p-date"></div>
+    <div class="macts"><button class="btnp" onclick="submitPay()" style="flex:1">Save payment</button><button class="btns" onclick="closePayModal()">Cancel</button></div>
   </div>
 </div>
 
@@ -2529,6 +2543,10 @@ const fmtZAR=n=>'R'+(parseFloat(n)||0).toLocaleString('en-ZA',{minimumFractionDi
 const invSubtotal=inv=>(inv.line_items||[]).reduce((s,l)=>s+(parseFloat(l.amount)||0),0);
 const invVat=inv=>invSubtotal(inv)*((parseFloat(inv.vat_pct)||0)/100);
 const invTotal=inv=>invSubtotal(inv)+invVat(inv);
+/* Payments: paid_amount is cumulative. A legacy 'paid' invoice with no
+   recorded amount counts as settled in full. */
+const invPaidAmt=inv=>inv.paid_amount!=null?(parseFloat(inv.paid_amount)||0):(inv.status==='paid'?invTotal(inv):0);
+const invBalance=inv=>Math.max(0,invTotal(inv)-invPaidAmt(inv));
 const invOverdue=inv=>inv.status==='sent'&&inv.due_date&&new Date(inv.due_date)<new Date(new Date().toDateString());
 function invNextNumber(){
   const yr=new Date().getFullYear();let mx=0;
@@ -2560,9 +2578,9 @@ window.renderInvoices=function(){
   const od=invs.filter(invOverdue);
   const paid=invs.filter(i=>i.status==='paid');
   st.innerHTML=`<div class="stats">
-    <div class="stat"><div class="slb">Outstanding</div><div class="sv" style="color:var(--amber)">${fmtZAR(out.reduce((s,i)=>s+invTotal(i),0))}</div><div class="ss">${out.length} sent, unpaid</div></div>
+    <div class="stat"><div class="slb">Outstanding</div><div class="sv" style="color:var(--amber)">${fmtZAR(out.reduce((s,i)=>s+invBalance(i),0))}</div><div class="ss">balance across ${out.length} sent</div></div>
     <div class="stat"><div class="slb">Overdue</div><div class="sv" style="color:${od.length?'var(--red)':'var(--ink4)'}">${od.length}</div><div class="ss">past due date</div></div>
-    <div class="stat"><div class="slb">Collected</div><div class="sv" style="color:var(--green)">${fmtZAR(paid.reduce((s,i)=>s+invTotal(i),0))}</div><div class="ss">${paid.length} paid</div></div>
+    <div class="stat"><div class="slb">Collected</div><div class="sv" style="color:var(--green)">${fmtZAR(invs.reduce((s,i)=>s+invPaidAmt(i),0))}</div><div class="ss">${paid.length} settled in full</div></div>
     <div class="stat"><div class="slb">Drafts</div><div class="sv">${invs.filter(i=>i.status==='draft').length}</div><div class="ss">not yet sent</div></div>
   </div>`;
   renderInvList();
@@ -2576,21 +2594,24 @@ window.renderInvList=function(){
   const SC={draft:['var(--paper3)','var(--ink3)'],sent:['var(--amberl)','var(--amber)'],paid:['var(--greenl)','var(--green)']};
   el.innerHTML=list.map(i=>{
     const od=invOverdue(i);const sc=SC[i.status]||SC.draft;
+    const paidAmt=invPaidAmt(i);const partial=i.status==='sent'&&paidAmt>0;
     const tbc=JSON.stringify(i.bill_to||{}).includes('TBC')||(i.line_items||[]).some(l=>(l.desc||'').includes('TBC'));
+    const payLine=i.status==='paid'?` &middot; <strong style="color:var(--green)">Paid ${fmtZAR(paidAmt)}${i.paid_date?' on '+i.paid_date:''}</strong>`
+      :partial?` &middot; <strong style="color:var(--amber)">${fmtZAR(paidAmt)} paid &middot; ${fmtZAR(invBalance(i))} due</strong>`:'';
     return `<div class="card" style="padding:.9rem 1.1rem${od?';border-left:3px solid var(--red)':''}">
       <div style="display:flex;align-items:center;gap:.8rem;flex-wrap:wrap">
         <div style="flex:1;min-width:200px">
           <div style="font-weight:600;font-size:.92rem;color:var(--ink)">${i.number} &mdash; ${(i.bill_to||{}).company||'&mdash;'}</div>
-          <div style="font-size:.74rem;color:var(--ink3)">Issued ${i.issue_date||'&mdash;'} &middot; due ${i.due_date||'&mdash;'}${od?' &middot; <strong style="color:var(--red)">OVERDUE</strong>':''}${tbc?' &middot; <strong style="color:var(--amber)">&#9888; details TBC</strong>':''}</div>
+          <div style="font-size:.74rem;color:var(--ink3)">Issued ${i.issue_date||'&mdash;'} &middot; due ${i.due_date||'&mdash;'}${od?' &middot; <strong style="color:var(--red)">OVERDUE</strong>':''}${payLine}${tbc?' &middot; <strong style="color:var(--amber)">&#9888; details TBC</strong>':''}</div>
         </div>
         <div style="font-family:var(--serif);font-size:1.2rem;color:var(--bronzed)">${fmtZAR(invTotal(i))}</div>
-        <span class="sb2" style="background:${sc[0]};color:${sc[1]};text-transform:uppercase">${i.status}</span>
+        <span class="sb2" style="background:${partial?'var(--amberl)':sc[0]};color:${partial?'var(--amber)':sc[1]};text-transform:uppercase">${partial?'part-paid':i.status}</span>
         <div style="display:flex;gap:.35rem;flex-wrap:wrap">
           <button class="btns" onclick="openInvModal('${i.id}')">&#9998; Edit</button>
           <button class="btns" onclick="printInv('${i.id}')">&#128424; Print / PDF</button>
           <button class="btns" onclick="emailInv('${i.id}')">&#9993; Email</button>
           ${i.status==='draft'?`<button class="btns" onclick="setInvStatus('${i.id}','sent')">Mark sent</button>`:''}
-          ${i.status==='sent'?`<button class="btns" onclick="setInvStatus('${i.id}','paid')" style="color:var(--green)">Mark paid</button>`:''}
+          ${i.status==='sent'?`<button class="btns" onclick="openPayModal('${i.id}')" style="color:var(--green)">&#10003; Record payment</button>`:''}
         </div>
       </div>
     </div>`;}).join('');
@@ -2599,6 +2620,29 @@ window.setInvStatus=async(id,status)=>{
   await sb.from('invoices').update({status}).eq('id',id);
   const i=invs.find(x=>x.id===id);if(i)i.status=status;
   renderInvoices();toast('Invoice marked '+status,'ok');
+};
+window.openPayModal=(id)=>{
+  const i=invs.find(x=>x.id===id);if(!i)return;
+  document.getElementById('p-id').value=id;
+  document.getElementById('pay-sub').textContent=i.number+' — total '+fmtZAR(invTotal(i))+(invPaidAmt(i)>0?' · '+fmtZAR(invPaidAmt(i))+' already paid':'');
+  document.getElementById('p-amt').value=invBalance(i).toFixed(2);
+  document.getElementById('p-date').value=new Date().toISOString().slice(0,10);
+  document.getElementById('paymodal').classList.add('open');
+};
+window.closePayModal=()=>document.getElementById('paymodal').classList.remove('open');
+window.submitPay=async()=>{
+  const id=document.getElementById('p-id').value;
+  const i=invs.find(x=>x.id===id);if(!i)return;
+  const amt=parseFloat(document.getElementById('p-amt').value);
+  if(!(amt>0)){toast('Enter the amount received','err');return;}
+  const paid_amount=invPaidAmt(i)+amt;
+  const paid_date=document.getElementById('p-date').value||new Date().toISOString().slice(0,10);
+  const status=paid_amount>=invTotal(i)-0.005?'paid':i.status;
+  const res=await sb.from('invoices').update({paid_amount,paid_date,status}).eq('id',id);
+  if(res.error){toast('Save failed: '+res.error.message,'err');return;}
+  Object.assign(i,{paid_amount,paid_date,status});
+  closePayModal();renderInvoices();
+  toast(status==='paid'?'Invoice settled in full':'Partial payment recorded — '+fmtZAR(invBalance(i))+' still due','ok');
 };
 window.addInvLine=(desc,amount)=>{
   const box=document.getElementById('i-lines');
@@ -2629,6 +2673,8 @@ window.openInvModal=(id)=>{
   document.getElementById('i-due').value=i?(i.due_date||''):new Date(Date.now()+14*864e5).toISOString().slice(0,10);
   document.getElementById('i-status').value=i?i.status:'draft';
   document.getElementById('i-vat').value=i?String(parseFloat(i.vat_pct)||0):'0';
+  document.getElementById('i-paid').value=i&&i.paid_amount!=null?i.paid_amount:'';
+  document.getElementById('i-paiddate').value=i?(i.paid_date||''):'';
   document.getElementById('i-bank').value=i?(i.bank_details||''):(localStorage.getItem('resgro_inv_bank')||RESGRO_BANK);
   document.getElementById('i-notes').value=i?(i.notes||''):'Payment due within 14 days of invoice date. Please use the invoice number as payment reference.';
   document.getElementById('i-lines').innerHTML='';
@@ -2656,6 +2702,8 @@ window.submitInv=async()=>{
     due_date:document.getElementById('i-due').value||null,
     currency:'ZAR',vat_pct:parseFloat(document.getElementById('i-vat').value)||0,
     bill_to:{company,contact:document.getElementById('i-contact').value.trim(),reg:document.getElementById('i-reg').value.trim(),email:document.getElementById('i-email').value.trim(),addr:document.getElementById('i-addr').value.trim()},
+    paid_amount:(()=>{const v=parseFloat(document.getElementById('i-paid').value);return isNaN(v)?null:v;})(),
+    paid_date:document.getElementById('i-paiddate').value||null,
     line_items:lines,bank_details:bank,notes:document.getElementById('i-notes').value,created_by:me.id};
   const res=id?await sb.from('invoices').update(row).eq('id',id):await sb.from('invoices').insert(row);
   if(res.error){toast('Save failed: '+res.error.message,'err');return;}
@@ -2667,6 +2715,10 @@ window.printInv=(id)=>{
   const b=i.bill_to||{};
   const rows=(i.line_items||[]).map(l=>`<tr><td>${l.desc}</td><td class="amt">${fmtZAR(l.amount)}</td></tr>`).join('');
   const vatRow=(parseFloat(i.vat_pct)||0)>0?`<tr><td class="tl">VAT @ ${i.vat_pct}%</td><td class="amt">${fmtZAR(invVat(i))}</td></tr>`:'';
+  const paid=invPaidAmt(i),bal=invBalance(i),settled=paid>0&&bal<=0.005;
+  const payRows=paid>0?`
+      <tr><td class="tl">Less: payment received${i.paid_date?' ('+i.paid_date+')':''}</td><td class="amt grn">&minus;&nbsp;${fmtZAR(paid)}</td></tr>
+      <tr class="tot"><td class="tl" style="color:#2a3142">Balance due</td><td class="amt${settled?' grn':''}">${fmtZAR(bal)}</td></tr>`:'';
   const w=window.open('','_blank');
   w.document.write(`<!DOCTYPE html><html><head><title>${i.number} — Resgro Capital</title>
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
@@ -2691,6 +2743,8 @@ window.printInv=(id)=>{
     .tl{text-align:right;color:#6b738a}
     .tot td{border-top:2px solid #96785a;border-bottom:none;font-weight:600;font-size:15px;padding-top:12px}
     .tot .amt{color:#7a6147;font-size:17px;font-family:'DM Serif Display',Georgia,serif}
+    .amt.grn{color:#2e7d4f}
+    .paidstamp{display:inline-block;margin-top:10px;padding:4px 16px;border:2px solid #2e7d4f;color:#2e7d4f;border-radius:4px;font-weight:600;letter-spacing:.18em;font-size:12px;text-transform:uppercase}
     .foot{display:flex;gap:40px;margin-top:36px}
     .foot>div{flex:1}
     .bank{white-space:pre-line;font-size:11.5px;color:#3c465a;background:#faf8f4;border:1px solid #e4e1d6;border-radius:6px;padding:12px 14px}
@@ -2702,7 +2756,8 @@ window.printInv=(id)=>{
     <div><div class="logo">Res<span>gro</span> Capital</div>
       <div class="from">${RESGRO_FROM.reg} &middot; ${RESGRO_FROM.tax}<br>${RESGRO_FROM.addr}<br>${RESGRO_FROM.email}</div></div>
     <div class="inv-t"><h1>INVOICE</h1><div class="num">${i.number}</div>
-      <div class="dates">Issue date: ${i.issue_date||'—'}<br>Due date: ${i.due_date||'—'}</div></div>
+      <div class="dates">Issue date: ${i.issue_date||'—'}<br>Due date: ${i.due_date||'—'}</div>
+      ${settled?`<div class="paidstamp">Paid${i.paid_date?' · '+i.paid_date:''}</div>`:''}</div>
   </div>
   <div class="bill"><div class="lbl">Billed to</div>
     <div class="co">${b.company||''}</div>
@@ -2712,7 +2767,8 @@ window.printInv=(id)=>{
     <tbody>${rows}
       <tr><td class="tl">Subtotal</td><td class="amt">${fmtZAR(invSubtotal(i))}</td></tr>
       ${vatRow}
-      <tr class="tot"><td class="tl" style="color:#2a3142">Total due</td><td class="amt">${fmtZAR(invTotal(i))}</td></tr>
+      <tr class="tot"><td class="tl" style="color:#2a3142">${paid>0?'Invoice total':'Total due'}</td><td class="amt">${fmtZAR(invTotal(i))}</td></tr>
+      ${payRows}
     </tbody>
   </table>
   <div class="foot">
@@ -2768,7 +2824,7 @@ const AI_TOOL={
 function aiSystem(){
   const today=new Date().toISOString().slice(0,10);
   const due=new Date(Date.now()+14*864e5).toISOString().slice(0,10);
-  const existing=invs.slice(0,20).map(i=>`${i.number} — ${(i.bill_to||{}).company||'?'} — ${fmtZAR(invTotal(i))} — ${i.status}`).join('\n')||'(none)';
+  const existing=invs.slice(0,20).map(i=>`${i.number} — ${(i.bill_to||{}).company||'?'} — ${fmtZAR(invTotal(i))} — ${i.status}${invPaidAmt(i)>0?` (paid ${fmtZAR(invPaidAmt(i))}${invBalance(i)>0?', '+fmtZAR(invBalance(i))+' due':''})`:''}`).join('\n')||'(none)';
   return `You are the invoicing assistant inside the Resgro Capital operating app, used by Aphile Molefe (sole director).
 
 Issuer details (already on every invoice — never ask for these):
