@@ -23,6 +23,32 @@ function json(body: unknown, status = 200): Response {
   });
 }
 
+// Resolve the Resend key: env secret wins; otherwise read it from Supabase
+// Vault via the service-role-only get_vault_secret() RPC.
+async function getResendKey(): Promise<string | null> {
+  const env = Deno.env.get("RESEND_API_KEY");
+  if (env) return env;
+  try {
+    const url = Deno.env.get("SUPABASE_URL");
+    const srk = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!url || !srk) return null;
+    const r = await fetch(`${url}/rest/v1/rpc/get_vault_secret`, {
+      method: "POST",
+      headers: {
+        apikey: srk,
+        Authorization: `Bearer ${srk}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ secret_name: "RESEND_API_KEY" }),
+    });
+    if (!r.ok) return null;
+    const v = await r.json();
+    return typeof v === "string" && v.length > 0 ? v : null;
+  } catch {
+    return null;
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return json({ error: "POST only" }, 405);
@@ -53,10 +79,10 @@ Deno.serve(async (req) => {
     return json({ error: "Attachment too large" }, 413);
   }
 
-  const key = Deno.env.get("RESEND_API_KEY");
+  const key = (await getResendKey());
   if (!key) {
     return json(
-      { error: "RESEND_API_KEY is not configured — add it under Edge Function secrets" },
+      { error: "RESEND_API_KEY is not configured — add it to Vault or Edge Function secrets" },
       500,
     );
   }
