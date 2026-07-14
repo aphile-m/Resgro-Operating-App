@@ -884,6 +884,24 @@ textarea.fi{resize:vertical;min-height:72px}
   </div>
 </div>
 
+<!-- SEND INVOICE MODAL -->
+<div class="mov" id="sendmodal">
+  <div class="modal" style="max-width:520px">
+    <div class="mtitle">Send invoice</div>
+    <div class="msub" id="send-sub"></div>
+    <input type="hidden" id="s-id">
+    <div class="fg"><label class="fl">To *</label><input class="fi" type="email" id="s-to" placeholder="billing@company.co.za"></div>
+    <div class="fg"><label class="fl">Subject</label><input class="fi" id="s-subject"></div>
+    <div class="fg"><label class="fl">Message</label><textarea class="fi" id="s-msg" style="min-height:110px"></textarea></div>
+    <div class="cg" style="margin-bottom:1rem;font-size:.76rem">The invoice PDF is generated and attached automatically. Sending marks a draft as <strong>sent</strong>.</div>
+    <div class="macts">
+      <button class="btnp" id="s-send-btn" onclick="submitSend()" style="flex:1">&#9993; Send email</button>
+      <button class="btns" onclick="sendViaMailApp()" title="Open your own mail app instead (attach the PDF yourself)">Use mail app</button>
+      <button class="btns" onclick="closeSendModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <!-- RECORD PAYMENT MODAL -->
 <div class="mov" id="paymodal">
   <div class="modal" style="max-width:420px">
@@ -2615,7 +2633,7 @@ window.renderInvList=function(){
         <span class="sb2" style="background:${partial?'var(--amberl)':sc[0]};color:${partial?'var(--amber)':sc[1]};text-transform:uppercase">${partial?'part-paid':i.status}</span>
         <div style="display:flex;gap:.35rem;flex-wrap:wrap" onclick="event.stopPropagation()">
           <button class="btns" onclick="printInv('${i.id}')" title="Print / save as PDF">&#128424;</button>
-          <button class="btns" onclick="emailInv('${i.id}')" title="Email">&#9993;</button>
+          <button class="btns" onclick="openSendModal('${i.id}')" title="Email invoice (PDF attached)">&#9993;</button>
           <button class="btns" onclick="duplicateInv('${i.id}')" title="Duplicate as new draft">&#10697;</button>
           ${!arch&&i.status==='draft'?`<button class="btns" onclick="setInvStatus('${i.id}','sent')">Mark sent</button>`:''}
           ${!arch&&i.status==='sent'?`<button class="btns" onclick="openPayModal('${i.id}')" style="color:var(--green)">&#10003; Record payment</button>`:''}
@@ -2841,6 +2859,149 @@ window.emailInv=(id)=>{
   location.href='mailto:'+email+'?subject='+subj+'&body='+body;
   toast(email?'Remember to attach the PDF (Print / PDF button)':'No email on file for this customer — add it to the invoice','ok');
 };
+/* ── SEND INVOICE BY EMAIL ─────────────────────────────────────────────────
+   PDF is generated in the browser (jsPDF, vector output) and posted to the
+   send-invoice Supabase Edge Function, which holds the Resend API key. */
+async function invPdfBase64(i){
+  const{jsPDF}=await import('https://esm.sh/jspdf@2.5.1');
+  const b=i.bill_to||{};
+  const doc=new jsPDF({unit:'pt',format:'a4'});
+  const W=595.28,M=48;let y=68;
+  const ink=[42,49,66],gray=[107,115,138],light=[154,161,179],gold=[150,120,90],goldD=[122,97,71],green=[46,125,79],rule=[228,225,214];
+  /* header — wordmark left, invoice meta right */
+  doc.setFont('times','bold');doc.setFontSize(24);doc.setTextColor(...ink);
+  doc.text('Res',M,y);const w1=doc.getTextWidth('Res');
+  doc.setTextColor(...gold);doc.text('gro',M+w1,y);const w2=doc.getTextWidth('gro');
+  doc.setTextColor(...ink);doc.text(' Capital',M+w1+w2,y);
+  doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(...gray);
+  doc.text(RESGRO_FROM.reg+'  ·  '+RESGRO_FROM.tax,M,y+16);
+  doc.text(RESGRO_FROM.addr,M,y+28);
+  doc.text(RESGRO_FROM.email,M,y+40);
+  doc.setFont('times','normal');doc.setFontSize(19);doc.setTextColor(...goldD);
+  doc.text('INVOICE',W-M,y-8,{align:'right',charSpace:2});
+  doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor(...ink);
+  doc.text(i.number,W-M,y+8,{align:'right'});
+  doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(...gray);
+  doc.text('Issue date: '+(i.issue_date||'—'),W-M,y+22,{align:'right'});
+  doc.text('Due date: '+(i.due_date||'—'),W-M,y+34,{align:'right'});
+  const paid=invPaidAmt(i),bal=invBalance(i),settled=paid>0&&bal<=0.005;
+  if(settled){
+    doc.setDrawColor(...green);doc.setLineWidth(1.5);doc.setTextColor(...green);
+    doc.setFont('helvetica','bold');doc.setFontSize(9.5);
+    const t='PAID'+(i.paid_date?'  ·  '+i.paid_date:'');const tw=doc.getTextWidth(t);
+    doc.roundedRect(W-M-tw-18,y+42,tw+18,19,3,3);
+    doc.text(t,W-M-9,y+55,{align:'right'});
+  }
+  y+=58;doc.setDrawColor(...gold);doc.setLineWidth(2);doc.line(M,y,W-M,y);y+=26;
+  /* billed to */
+  doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(...light);
+  doc.text('BILLED TO',M,y,{charSpace:1});y+=14;
+  doc.setFontSize(11);doc.setTextColor(...ink);doc.text(b.company||'',M,y);y+=13;
+  doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(...gray);
+  [b.contact,b.reg,b.addr,b.email].filter(Boolean).forEach(t=>{doc.text(String(t),M,y);y+=12;});
+  y+=16;
+  /* line items */
+  doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(...light);
+  doc.text('DESCRIPTION',M,y,{charSpace:1});doc.text('AMOUNT (ZAR)',W-M,y,{align:'right',charSpace:1});
+  y+=7;doc.setDrawColor(...rule);doc.setLineWidth(1);doc.line(M,y,W-M,y);y+=17;
+  doc.setFont('helvetica','normal');doc.setFontSize(9.5);
+  (i.line_items||[]).forEach(l=>{
+    const lines=doc.splitTextToSize(String(l.desc||''),W-2*M-130);
+    doc.setTextColor(...ink);doc.text(lines,M,y);
+    doc.text(fmtZAR(l.amount),W-M,y,{align:'right'});
+    y+=lines.length*12+6;
+    doc.setDrawColor(...rule);doc.setLineWidth(.5);doc.line(M,y-4,W-M,y-4);y+=8;
+    if(y>700){doc.addPage();y=64;}
+  });
+  y+=6;
+  /* totals (right-aligned block) */
+  const trow=(label,val,o={})=>{
+    doc.setFont('helvetica',o.bold?'bold':'normal');doc.setFontSize(o.big?11:9.5);
+    doc.setTextColor(...(o.green?green:o.mut?gray:ink));doc.text(label,W-M-160,y,{align:'right'});
+    doc.setTextColor(...(o.green?green:o.goldv?goldD:ink));doc.text(val,W-M,y,{align:'right'});
+    y+=o.big?20:15;
+  };
+  trow('Subtotal',fmtZAR(invSubtotal(i)),{mut:1});
+  if((parseFloat(i.vat_pct)||0)>0)trow('VAT @ '+i.vat_pct+'%',fmtZAR(invVat(i)),{mut:1});
+  doc.setDrawColor(...gold);doc.setLineWidth(1.5);doc.line(W-M-230,y-9,W-M,y-9);y+=6;
+  trow(paid>0?'Invoice total':'Total due',fmtZAR(invTotal(i)),{bold:1,big:1,goldv:1});
+  if(paid>0){
+    trow('Less: payment received'+(i.paid_date?' ('+i.paid_date+')':''),'-  '+fmtZAR(paid),{green:1});
+    trow('Balance due',fmtZAR(bal),{bold:1,big:1,green:settled});
+  }
+  y+=18;if(y>640){doc.addPage();y=64;}
+  /* payment details + notes */
+  doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(...light);
+  doc.text('PAYMENT DETAILS',M,y,{charSpace:1});y+=6;
+  const bank=(i.bank_details||'').split('\n').filter(Boolean);
+  const bh=bank.length*12+16;
+  doc.setFillColor(250,248,244);doc.setDrawColor(...rule);doc.setLineWidth(1);
+  doc.roundedRect(M,y,(W-2*M)/2-8,bh,4,4,'FD');
+  doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(60,70,90);
+  bank.forEach((t,n)=>doc.text(t,M+10,y+14+n*12));
+  if(i.notes){
+    doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(...light);
+    doc.text('NOTES',M+(W-2*M)/2+8,y-6,{charSpace:1});
+    doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(...gray);
+    doc.text(doc.splitTextToSize(i.notes,(W-2*M)/2-16),M+(W-2*M)/2+8,y+14);
+  }
+  y+=bh+20;
+  if((parseFloat(i.vat_pct)||0)===0){
+    doc.setFontSize(7.5);doc.setTextColor(...light);
+    doc.text('Resgro Capital (Pty) Ltd is not registered for VAT. No VAT has been charged on this invoice.',M,y);
+  }
+  return doc.output('datauristring').split(',')[1];
+}
+window.openSendModal=(id)=>{
+  const i=invs.find(x=>x.id===id);if(!i)return;
+  const b=i.bill_to||{};
+  document.getElementById('s-id').value=id;
+  document.getElementById('send-sub').textContent=i.number+' — '+(b.company||'')+' — '+fmtZAR(invTotal(i));
+  document.getElementById('s-to').value=b.email||knownCustField(b.company,'email')||'';
+  document.getElementById('s-subject').value=i.number+' — Resgro Capital (Pty) Ltd';
+  const contact=b.contact||knownCustField(b.company,'contact')||'';
+  const paid=invPaidAmt(i);
+  document.getElementById('s-msg').value='Hi '+(contact||'there')+',\n\nPlease find attached invoice '+i.number+' for '+fmtZAR(invTotal(i))+(paid>0?' (balance due '+fmtZAR(invBalance(i))+')':'')+', due '+(i.due_date||'')+'.\n\nBanking details are on the invoice — please use '+i.number+' as the payment reference.\n\nBest regards\nAphile Molefe\nResgro Capital (Pty) Ltd';
+  document.getElementById('sendmodal').classList.add('open');
+};
+window.closeSendModal=()=>document.getElementById('sendmodal').classList.remove('open');
+window.sendViaMailApp=()=>{const id=document.getElementById('s-id').value;closeSendModal();emailInv(id);};
+window.submitSend=async()=>{
+  const id=document.getElementById('s-id').value;
+  const i=invs.find(x=>x.id===id);if(!i)return;
+  const to=document.getElementById('s-to').value.trim();
+  if(!/^\S+@\S+\.\S+$/.test(to)){toast('Enter a valid email address','err');return;}
+  const btn=document.getElementById('s-send-btn');
+  btn.disabled=true;btn.textContent='Generating PDF…';
+  try{
+    const pdf_base64=await invPdfBase64(i);
+    btn.textContent='Sending…';
+    const msg=document.getElementById('s-msg').value;
+    const{error}=await sb.functions.invoke('send-invoice',{body:{
+      to,
+      subject:document.getElementById('s-subject').value||i.number,
+      text:msg,
+      html:msg.split('\n').map(l=>l?'<p style="margin:0 0 .5em;font-family:Georgia,serif;color:#2a3142">'+aiEsc(l)+'</p>':'').join(''),
+      pdf_base64,
+      filename:i.number+'.pdf'}});
+    if(error){
+      let m=error.message||'send failed';
+      try{const j=await error.context.json();if(j&&j.error)m=j.error;}catch(_){}
+      throw new Error(m);
+    }
+    const bill_to={...(i.bill_to||{}),email:to};
+    const status=i.status==='draft'?'sent':i.status;
+    await sb.from('invoices').update({bill_to,status}).eq('id',id);
+    Object.assign(i,{bill_to,status});
+    closeSendModal();renderInvoices();
+    toast('Invoice '+i.number+' emailed to '+to,'ok');
+  }catch(e){
+    toast('Email failed: '+(e&&e.message||e),'err');
+  }finally{
+    btn.disabled=false;btn.innerHTML='&#9993; Send email';
+  }
+};
+
 /* Edit modal: typing a known company auto-fills the empty customer fields. */
 window.invCompanyAutofill=()=>{
   const co=document.getElementById('i-company').value;
