@@ -857,7 +857,7 @@ textarea.fi{resize:vertical;min-height:72px}
     <div class="msub" id="invnum-sub">Number assigned on save</div>
     <input type="hidden" id="i-id">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:.875rem">
-      <div class="fg"><label class="fl">Bill to — company *</label><input class="fi" id="i-company" placeholder="e.g. Kgabi Holdings (Pty) Ltd"></div>
+      <div class="fg"><label class="fl">Bill to — company *</label><input class="fi" id="i-company" placeholder="e.g. Kgabi Holdings (Pty) Ltd" onchange="invCompanyAutofill()"></div>
       <div class="fg"><label class="fl">Contact person</label><input class="fi" id="i-contact" placeholder="e.g. Kgabi"></div>
       <div class="fg"><label class="fl">Company reg no</label><input class="fi" id="i-reg" placeholder="e.g. 2026/000000/07"></div>
       <div class="fg"><label class="fl">Email</label><input class="fi" id="i-email" placeholder="billing@company.co.za"></div>
@@ -2822,13 +2822,34 @@ window.printInv=(id)=>{
   </body></html>`);
   w.document.close();
 };
+/* Newest known value of a bill_to field for a company, across all invoices
+   (incl. archived) — the same memory the AI assistant uses. */
+function knownCustField(company,field){
+  const key=(company||'').trim().toLowerCase();if(!key)return'';
+  for(let n=invs.length-1;n>=0;n--){
+    const b=invs[n].bill_to||{};
+    if((b.company||'').trim().toLowerCase()===key&&b[field])return b[field];
+  }
+  return'';
+}
 window.emailInv=(id)=>{
   const i=invs.find(x=>x.id===id);if(!i)return;
   const b=i.bill_to||{};
+  const email=b.email||knownCustField(b.company,'email');
   const subj=encodeURIComponent(i.number+' — Resgro Capital (Pty) Ltd');
-  const body=encodeURIComponent('Hi '+(b.contact||'')+',\n\nPlease find attached invoice '+i.number+' for '+fmtZAR(invTotal(i))+', due '+(i.due_date||'')+'.\n\nBanking details are on the invoice — please use '+i.number+' as the payment reference.\n\nBest regards\nAphile Molefe\nResgro Capital (Pty) Ltd');
-  location.href='mailto:'+(b.email||'')+'?subject='+subj+'&body='+body;
-  toast('Remember to attach the PDF (Print / PDF button)','ok');
+  const body=encodeURIComponent('Hi '+(b.contact||knownCustField(b.company,'contact')||'')+',\n\nPlease find attached invoice '+i.number+' for '+fmtZAR(invTotal(i))+', due '+(i.due_date||'')+'.\n\nBanking details are on the invoice — please use '+i.number+' as the payment reference.\n\nBest regards\nAphile Molefe\nResgro Capital (Pty) Ltd');
+  location.href='mailto:'+email+'?subject='+subj+'&body='+body;
+  toast(email?'Remember to attach the PDF (Print / PDF button)':'No email on file for this customer — add it to the invoice','ok');
+};
+/* Edit modal: typing a known company auto-fills the empty customer fields. */
+window.invCompanyAutofill=()=>{
+  const co=document.getElementById('i-company').value;
+  let filled=false;
+  [['i-contact','contact'],['i-reg','reg'],['i-email','email'],['i-addr','addr']].forEach(([el,f])=>{
+    const inp=document.getElementById(el);
+    if(inp&&!inp.value.trim()){const v=knownCustField(co,f);if(v){inp.value=v;filled=true;}}
+  });
+  if(filled)toast('Customer details filled from previous invoices','ok');
 };
 
 /* ── AI INVOICE ASSISTANT ──────────────────────────────────────────────────
