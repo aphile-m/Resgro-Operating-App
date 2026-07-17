@@ -5,7 +5,7 @@
 // Deploy:   via MCP/CLI, or paste into Dashboard → Edge Functions → New function
 // Secrets:  RESEND_API_KEY  (required — from resend.com)
 //           INVOICE_FROM    (optional — default "Resgro Capital <invoices@resgrocapital.com>")
-//           INVOICE_BCC     (optional — e.g. aphile@resgrocapital.com to keep a copy)
+//           INVOICE_CC      (optional — visible CC + reply-to, e.g. aphile@resgrocapital.com)
 //
 // JWT verification is ON (default): only signed-in app users can invoke this.
 
@@ -88,7 +88,7 @@ Deno.serve(async (req) => {
   }
   const from =
     (await secret("INVOICE_FROM")) ?? "Resgro Capital <invoices@resgrocapital.com>";
-  const bcc = (await secret("INVOICE_BCC")) || undefined;
+  const cc = (await secret("INVOICE_CC")) || undefined;
 
   const r = await fetch("https://api.resend.com/emails", {
     method: "POST",
@@ -99,7 +99,7 @@ Deno.serve(async (req) => {
     body: JSON.stringify({
       from,
       to: [to],
-      ...(bcc ? { bcc: [bcc] } : {}),
+      ...(cc ? { cc: [cc], reply_to: [cc] } : {}),
       subject,
       html: html || undefined,
       text: text || undefined,
