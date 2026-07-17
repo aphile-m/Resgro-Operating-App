@@ -412,6 +412,15 @@ textarea.fi{resize:vertical;min-height:72px}
 /* ── INVOICES ─────────────────────────────────────────────────────────── */
 .inv-line{display:grid;grid-template-columns:1fr 130px 34px;gap:.5rem;margin-bottom:.5rem;align-items:center}
 .inv-line .btns{padding:.4rem .6rem;line-height:1}
+/* ── ENGAGEMENTS ──────────────────────────────────────────────────────── */
+.eng-head,.eng-line{display:grid;grid-template-columns:1.1fr 1fr .9fr .8fr .8fr 1.3fr 26px;gap:.4rem;align-items:center}
+.eng-head{font-size:.62rem;text-transform:uppercase;letter-spacing:.06em;color:var(--ink4);margin:.35rem 0 .3rem}
+.eng-line{margin-bottom:.4rem}
+.eng-line .fi,.eng-line .fsel{padding:.45rem .55rem;font-size:.78rem}
+.eng-line b{cursor:pointer;color:var(--red);text-align:center}
+@media(max-width:780px){.eng-head{display:none}.eng-line{grid-template-columns:1fr 1fr;gap:.35rem}}
+.engrow{display:flex;align-items:center;gap:.8rem;padding:.7rem .9rem;cursor:pointer}
+.engrow:hover{background:var(--paper2)}
 /* ── AI INVOICE CHAT ──────────────────────────────────────────────────── */
 #ai-msgs{flex:1;min-height:180px;max-height:44vh;overflow-y:auto;padding:.25rem .1rem;display:flex;flex-direction:column;gap:.5rem;margin-bottom:.6rem}
 .ai-m{max-width:88%;padding:.55rem .8rem;border-radius:12px;font-size:.85rem;line-height:1.55;white-space:pre-wrap;word-break:break-word}
@@ -472,6 +481,7 @@ textarea.fi{resize:vertical;min-height:72px}
       <div class="slbl">Pipeline</div>
       <button class="si" onclick="goV('opportunities',this)"><span class="ic">&#9670;</span>Opportunities<span class="sbadge" id="oppbadge" style="display:none;background:var(--bluel);color:var(--blue)"></span></button>
       <button class="si" onclick="goV('dealtracking',this)"><span class="ic">&#9650;</span>Deal tracking</button>
+      <button class="si" onclick="goV('engagements',this)"><span class="ic">&#9743;</span>Engagements<span class="sbadge" id="engbadge" style="display:none;background:var(--redl);color:var(--red)"></span></button>
       <button class="si" onclick="goV('introductions',this)"><span class="ic">&#9733;</span>Investor targets<span class="sbadge" id="introbadge" style="display:none;background:var(--teall);color:var(--teal)"></span></button>
     </div>
     <div class="sdiv"></div>
@@ -548,6 +558,7 @@ textarea.fi{resize:vertical;min-height:72px}
       <div id="opp-list"></div>
     </div>
     <div class="view" id="v-dealtracking"></div>
+    <div class="view" id="v-engagements"></div>
     <div class="view" id="v-documents">
       <div class="pgh" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem">
         <div><div class="pgt">Documents</div><div class="pgs">Structured repository for legal, commercial and operational documents</div></div>
@@ -717,6 +728,12 @@ textarea.fi{resize:vertical;min-height:72px}
       <div class="fg" style="grid-column:1/-1"><label class="fl">Next action</label><input class="fi" id="o-na" placeholder="e.g. Send teaser to MCB, schedule Iroko call"></div>
       <div class="fg" style="grid-column:1/-1"><label class="fl">Blockers / risks</label><textarea class="fi" id="o-blockers" placeholder="What could prevent this from closing?"></textarea></div>
       <div class="fg" style="grid-column:1/-1"><label class="fl">Notes</label><textarea class="fi" id="o-notes" placeholder="Any additional context..."></textarea></div>
+      <div class="fg" style="grid-column:1/-1" id="o-eng-wrap">
+        <label class="fl">Engagements &mdash; who has been engaged on this deal</label>
+        <div class="eng-head"><span>Person</span><span>Organisation</span><span>Status</span><span>Last contact</span><span>Follow up</span><span>Note / next step</span><span></span></div>
+        <div id="o-eng-list"></div>
+        <button class="btns" type="button" onclick="addEngLine()" style="margin-top:.4rem">+ Add person</button>
+      </div>
       <div class="fg"><label class="fl">Iroko / Marula?</label><select class="fsel" id="o-iroko"><option value="true">Yes &mdash; Iroko / Marula product</option><option value="false">No &mdash; other structure</option></select></div>
       <div class="fg"><label class="fl">FAIS in scope?</label><select class="fsel" id="o-fais"><option value="true">Yes</option><option value="false">No / not yet assessed</option></select></div>
     </div>
@@ -1165,6 +1182,7 @@ window.goV=(v,btn)=>{
   else if(v==='activity')renderAct();
   else if(v==='opportunities'){renderOppKanban();renderOpps();}
   else if(v==='dealtracking')renderDealTracking();
+  else if(v==='engagements')renderEngagements();
   else if(v==='introductions')renderIntros();
   else if(v==='documents')renderDocs();
   else if(v==='minutes')renderMinutes();
@@ -1674,11 +1692,13 @@ window.renderOpps=function(){
         ${o.next_action?`<div class="slbl2">Next action</div><div class="ibox"><strong style="color:var(--ink)">${o.next_action}</strong>${o.next_action_date?` <span style="color:var(--ink3);font-size:.75rem">by ${o.next_action_date}</span>`:''}</div>`:''}
         ${o.blockers?`<div class="slbl2">Blockers / risks</div><div class="ibox" style="border-left:2px solid var(--amber)">${o.blockers}</div>`:''}
         ${o.notes?`<div class="slbl2">Notes</div><div class="ibox">${o.notes}</div>`:''}
+        ${(o.engagements||[]).length?`<div class="slbl2">Engaged (${o.engagements.length})</div><div class="ibox" style="display:flex;flex-wrap:wrap;gap:.35rem">${o.engagements.map(e=>`<span class="sb2" style="background:${ENG_C[e.status]||'var(--ink4)'}22;color:${ENG_C[e.status]||'var(--ink4)'}">${e.name}${e.org?' ('+e.org+')':''}</span>`).join('')}</div>`:''}
         <div class="arow" style="margin-top:1rem">
           <button class="btns" onclick="openOppModal('${o.id}')">&#9998; Edit</button>
           <select class="fsel" style="padding:.4rem .65rem;font-size:.78rem;width:auto" onchange="updOppStage('${o.id}',this.value)">
             ${['idea','qualifying','active','on_hold','passed'].map(s=>`<option value="${s}"${o.stage===s?' selected':''}>${STL[s]}</option>`).join('')}
           </select>
+          <button class="btns" onclick="deleteOpp('${o.id}')" style="color:var(--red);margin-left:auto" title="Delete permanently">&#128465; Delete</button>
         </div>
       </div>
     </div>`;
@@ -1709,6 +1729,10 @@ window.openOppModal=async(id)=>{
     ['o-title','o-desc','o-client','o-dtype','o-na','o-blockers','o-notes','o-idate','o-nadate','o-size','o-fee','o-months','o-prob'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
     s('o-stage','idea');s('o-lh','medium');s('o-milestone','');s('o-iroko','true');s('o-fais','false');s('o-pillar','1');
   }
+  const ew=document.getElementById('o-eng-wrap');
+  if(ew){ew.style.display=engOk()?'block':'none';
+    document.getElementById('o-eng-list').innerHTML='';
+    if(engOk())((o&&o.engagements)||[]).forEach(e=>addEngLine(e));}
   toggleMilestoneCustom();
   document.getElementById('oppmodal').classList.add('open');
 };
@@ -1726,10 +1750,106 @@ window.submitOpp=async()=>{
   const gn=el=>{const v=parseFloat(document.getElementById(el)?.value);return isNaN(v)?null:v;};
   const milestone=g('o-milestone');
   const row={title,description:desc,pillar:parseInt(g('o-pillar'))||1,stage:g('o-stage')||'idea',likelihood:g('o-lh')||'medium',execution_milestone:milestone||null,execution_prob:milestone==='custom'?gn('o-prob'):null,client_name:g('o-client'),client_type:g('o-ctype'),deal_type:g('o-dtype'),source:g('o-source'),estimated_size:gn('o-size'),estimated_fee_pct:gn('o-fee'),estimated_months_to_close:gn('o-months')?Math.round(gn('o-months')):null,intro_date:g('o-idate'),next_action_date:g('o-nadate'),next_action:g('o-na'),blockers:g('o-blockers'),notes:g('o-notes'),iroko_relevant:g('o-iroko')==='true',fais_required:g('o-fais')==='true',last_activity:new Date().toISOString(),created_by:me.id};
+  if(engOk())row.engagements=readEngLines();
   if(id)await sb.from('opportunities').update(row).eq('id',id);
   else await sb.from('opportunities').insert(row);
   const{data}=await sb.from('opportunities').select('*').order('created_at',{ascending:false});opps=(data||[]).filter(x=>!x.title.startsWith('__seed_v'));
   window.closeOppModal();renderOppKanban();renderOpps();renderDash();updBadge();toast(id?'Opportunity updated':'Opportunity added','ok');
+};
+window.deleteOpp=async(id)=>{
+  const o=opps.find(x=>x.id===id);if(!o)return;
+  if(!confirm('Permanently delete "'+o.title+'"? This cannot be undone.'))return;
+  const res=await sb.from('opportunities').delete().eq('id',id).select();
+  if(res.error){toast('Delete failed: '+res.error.message,'err');return;}
+  if(!res.data||!res.data.length){toast('Delete not permitted — run the pending SQL (delete policy) first','err');return;}
+  opps=opps.filter(x=>x.id!==id);
+  renderOppKanban();renderOpps();renderDash();updBadge();
+  toast('Opportunity deleted','ok');
+};
+/* ── ENGAGEMENT TRACKING (per-deal contact log, JSONB column) ──────────── */
+const engOk=()=>opps.length>0&&('engagements' in opps[0]);
+const ENG_STATUS={to_contact:'To contact',awaiting:'Awaiting reply',engaged:'Engaged',committed:'Committed',declined:'Declined'};
+const ENG_C={to_contact:'var(--ink4)',awaiting:'var(--amber)',engaged:'var(--teal)',committed:'var(--green)',declined:'var(--red)'};
+window.addEngLine=(e)=>{
+  e=e||{};
+  const d=document.createElement('div');d.className='eng-line';
+  d.innerHTML=`
+    <input class="fi" data-k="name" placeholder="e.g. Botsang Ramorwa" value="${(e.name||'').replace(/"/g,'&quot;')}">
+    <input class="fi" data-k="org" placeholder="e.g. PIC" value="${(e.org||'').replace(/"/g,'&quot;')}">
+    <select class="fsel" data-k="status">${Object.entries(ENG_STATUS).map(([k,l])=>`<option value="${k}"${e.status===k?' selected':''}>${l}</option>`).join('')}</select>
+    <input class="fi" type="date" data-k="last_contact" value="${e.last_contact||''}">
+    <input class="fi" type="date" data-k="follow_up" value="${e.follow_up||''}">
+    <input class="fi" data-k="note" placeholder="e.g. teaser sent, awaiting slot" value="${(e.note||'').replace(/"/g,'&quot;')}">
+    <b onclick="this.parentElement.remove()" title="Remove">&times;</b>`;
+  document.getElementById('o-eng-list').appendChild(d);
+};
+function readEngLines(){
+  return[...document.querySelectorAll('#o-eng-list .eng-line')].map(l=>{
+    const v=k=>l.querySelector(`[data-k="${k}"]`)?.value?.trim()||'';
+    return{name:v('name'),org:v('org'),status:v('status')||'to_contact',last_contact:v('last_contact')||null,follow_up:v('follow_up')||null,note:v('note')};
+  }).filter(e=>e.name||e.org);
+}
+const engDaysAgo=d=>d?Math.floor((new Date(new Date().toDateString())-new Date(d))/864e5):null;
+window.renderEngagements=function(){
+  const el=document.getElementById('v-engagements');if(!el)return;
+  const hdr=`<div class="pgh"><div class="pgt">Engagements</div><div class="pgs">Iroko-related deals &mdash; who has been engaged, who to call next</div></div>`;
+  if(!engOk()){el.innerHTML=hdr+'<div class="cw">Engagement tracking needs the <strong>engagements</strong> column &mdash; run <strong>supabase_engagements.sql</strong> (or ask Claude to apply it via the connector), then reload.</div>';return;}
+  const deals=opps.filter(o=>o.iroko_relevant&&!['passed','on_hold'].includes(o.stage));
+  const today=new Date(new Date().toDateString());
+  const rows=[];
+  deals.forEach(o=>(o.engagements||[]).forEach(e=>rows.push({...e,deal:o})));
+  const active=rows.filter(r=>!['declined'].includes(r.status));
+  const fu=r=>r.follow_up?new Date(r.follow_up):null;
+  const overdue=active.filter(r=>fu(r)&&fu(r)<today&&r.status!=='committed');
+  const dueSoon=active.filter(r=>fu(r)&&fu(r)>=today&&(fu(r)-today)/864e5<=7);
+  const awaiting=active.filter(r=>r.status==='awaiting'&&!overdue.includes(r)&&!dueSoon.includes(r))
+    .sort((a,b)=>(a.last_contact||'0').localeCompare(b.last_contact||'0'));
+  const toContact=active.filter(r=>r.status==='to_contact'&&!overdue.includes(r)&&!dueSoon.includes(r));
+  const untouched=deals.filter(o=>!(o.engagements||[]).length);
+  const badge=document.getElementById('engbadge');
+  if(badge){badge.style.display=overdue.length?'inline-flex':'none';badge.textContent=overdue.length;}
+  const row=r=>{
+    const da=engDaysAgo(r.last_contact);
+    const od=fu(r)&&fu(r)<today;
+    return`<div class="card engrow" style="padding:0" onclick="openOppModal('${r.deal.id}')">
+      <div class="engrow" style="flex:1;padding:.7rem .9rem">
+        <div style="flex:1;min-width:150px">
+          <div style="font-weight:600;font-size:.88rem;color:var(--ink)">${r.name||'&mdash;'}${r.org?` <span style="font-weight:400;color:var(--ink3)">&middot; ${r.org}</span>`:''}</div>
+          <div style="font-size:.72rem;color:var(--ink4)">${r.deal.title.substring(0,60)}${r.note?' &middot; <span style="color:var(--ink3)">'+r.note+'</span>':''}</div>
+        </div>
+        <div style="font-size:.72rem;color:var(--ink3);text-align:right;flex-shrink:0">
+          ${da!=null?`last contact ${da===0?'today':da+'d ago'}`:'never contacted'}
+          ${r.follow_up?`<br><span style="color:${od?'var(--red)':'var(--ink2)'};font-weight:${od?'600':'400'}">${od?'was due':'follow up'} ${r.follow_up}</span>`:''}
+        </div>
+        <span class="sb2" style="background:${ENG_C[r.status]}22;color:${ENG_C[r.status]};flex-shrink:0">${ENG_STATUS[r.status]||r.status}</span>
+      </div>
+    </div>`;
+  };
+  const section=(title,color,items,empty)=>`
+    <div style="margin:1.4rem 0 .6rem;display:flex;align-items:center;gap:.5rem">
+      <div style="width:8px;height:8px;border-radius:50%;background:${color}"></div>
+      <div style="font-weight:600;font-size:.9rem;color:var(--ink)">${title}</div>
+      <span style="font-size:.72rem;color:var(--ink4)">${items.length}</span>
+    </div>
+    ${items.length?items.map(row).join(''):`<div style="font-size:.76rem;color:var(--ink4);padding:.2rem 0 .4rem">${empty}</div>`}`;
+  el.innerHTML=hdr+`
+  <div class="stats">
+    <div class="stat"><div class="slb">Overdue calls</div><div class="sv" style="color:${overdue.length?'var(--red)':'var(--ink4)'}">${overdue.length}</div><div class="ss">follow-up date passed</div></div>
+    <div class="stat"><div class="slb">Due this week</div><div class="sv" style="color:var(--amber)">${dueSoon.length}</div><div class="ss">follow-ups scheduled</div></div>
+    <div class="stat"><div class="slb">Awaiting replies</div><div class="sv" style="color:var(--teal)">${awaiting.length}</div><div class="ss">ball in their court</div></div>
+    <div class="stat"><div class="slb">People engaged</div><div class="sv">${active.length}</div><div class="ss">across ${deals.length} Iroko deals</div></div>
+  </div>
+  ${section('Call now — overdue follow-ups','var(--red)',overdue,'Nothing overdue. Clean slate.')}
+  ${section('Coming up this week','var(--amber)',dueSoon,'No follow-ups scheduled in the next 7 days.')}
+  ${section('Awaiting reply — chase if stale','var(--teal)',awaiting,'Nobody owes you a reply.')}
+  ${section('Not yet contacted','var(--ink4)',toContact,'No planned contacts queued.')}
+  ${untouched.length?`
+    <div style="margin:1.4rem 0 .6rem;font-weight:600;font-size:.9rem;color:var(--ink)">&#9888; Iroko deals with nobody engaged yet</div>
+    ${untouched.map(o=>`<div class="card engrow" onclick="openOppModal('${o.id}')" style="padding:.7rem .9rem">
+      <div style="flex:1"><div style="font-weight:600;font-size:.85rem;color:var(--ink)">${o.title}</div>
+      <div style="font-size:.72rem;color:var(--ink4)">${STL[o.stage]} &middot; ${o.client_name||''}</div></div>
+      <span style="font-size:.74rem;color:var(--amber)">add engagements &rarr;</span>
+    </div>`).join('')}`:''}`;
 };
 window.updOppStage=async(id,stage)=>{
   const last_activity=new Date().toISOString();
