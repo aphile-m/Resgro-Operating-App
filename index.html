@@ -543,6 +543,7 @@ textarea.fi{resize:vertical;min-height:72px}
         <button class="fbtn" onclick="window.oppF=2;renderOpps();document.querySelectorAll('#v-opportunities .fbtn').forEach(b=>b.classList.remove('on'));this.classList.add('on')">P2 &mdash; Alpha</button>
         <button class="fbtn" onclick="window.oppF=3;renderOpps();document.querySelectorAll('#v-opportunities .fbtn').forEach(b=>b.classList.remove('on'));this.classList.add('on')">P3 &mdash; Advisory</button>
         <button class="fbtn" onclick="window.oppF=4;renderOpps();document.querySelectorAll('#v-opportunities .fbtn').forEach(b=>b.classList.remove('on'));this.classList.add('on')">P4 &mdash; Risk</button>
+        <button class="fbtn" onclick="window.oppF=5;renderOpps();document.querySelectorAll('#v-opportunities .fbtn').forEach(b=>b.classList.remove('on'));this.classList.add('on')">P5 &mdash; Principal</button>
       </div>
       <div id="opp-list"></div>
     </div>
@@ -663,6 +664,7 @@ textarea.fi{resize:vertical;min-height:72px}
         <option value="2">Pillar 2 &mdash; Portable alpha</option>
         <option value="3">Pillar 3 &mdash; Corporate finance advisory</option>
         <option value="4">Pillar 4 &mdash; Corporate risk management</option>
+        <option value="5">Pillar 5 &mdash; Principal investments</option>
       </select></div>
       <div class="fg"><label class="fl">Stage *</label><select class="fsel" id="o-stage">
         <option value="idea">Idea &mdash; not yet approached</option>
@@ -747,6 +749,7 @@ textarea.fi{resize:vertical;min-height:72px}
       <option value="2">Pillar 2 &mdash; Portable alpha</option>
       <option value="3">Pillar 3 &mdash; Advisory</option>
       <option value="4">Pillar 4 &mdash; Risk management</option>
+      <option value="5">Pillar 5 &mdash; Principal investments</option>
     </select></div>
     <div class="fg"><label class="fl">Status</label><select class="fsel" id="d-status">
       <option value="current">Current</option>
@@ -1174,7 +1177,7 @@ window.goV=(v,btn)=>{
 window.toggleSB=()=>document.getElementById('sbar').classList.toggle('open');
 
 /* ── DASHBOARD ─────────────────────────────────────────────────────────── */
-const PMETA={1:{n:'Pillar 1 — Iroko origination',c:'var(--bronze)'},2:{n:'Pillar 2 — Portable alpha',c:'var(--teal)'},3:{n:'Pillar 3 — Corporate finance advisory',c:'var(--green)'},4:{n:'Pillar 4 — Corporate risk management',c:'var(--blue)'}};
+const PMETA={1:{n:'Pillar 1 — Iroko origination',c:'var(--bronze)'},2:{n:'Pillar 2 — Portable alpha',c:'var(--teal)'},3:{n:'Pillar 3 — Corporate finance advisory',c:'var(--green)'},4:{n:'Pillar 4 — Corporate risk management',c:'var(--blue)'},5:{n:'Pillar 5 — Principal investments',c:'var(--purple)'}};
 const dashPcColor=pc=>pc>=75?'var(--green)':pc>=40?'var(--amber)':'var(--ink4)';
 const DASH_KEY='resgro_dash_prefs';
 function dashPrefs(){try{return JSON.parse(localStorage.getItem(DASH_KEY))||{};}catch(e){return {};}}
@@ -1244,7 +1247,7 @@ function renderDash(){
   const nearClose=active.filter(o=>dealCompletion(o)>=60).length;
   let displayGroups;
   if(group==='pillar'){
-    displayGroups=[1,2,3,4].map(p=>({label:PMETA[p].n,color:PMETA[p].c,items:dashSortItems(active.filter(o=>parseInt(o.pillar)===p),sort,order)})).filter(g=>g.items.length);
+    displayGroups=[1,2,3,4,5].map(p=>({label:PMETA[p].n,color:PMETA[p].c,items:dashSortItems(active.filter(o=>parseInt(o.pillar)===p),sort,order)})).filter(g=>g.items.length);
   } else {
     displayGroups=[{label:null,color:null,items:dashSortItems(active,sort,order)}];
   }
@@ -1558,7 +1561,7 @@ function renderDealTracking(){
   const byStage=stages.map(s=>{const items=active.filter(o=>o.stage===s);
     return{s,n:items.length,wf:items.reduce((a,o)=>a+dealFee(o)*dealProb(o),0)};});
   const maxN=Math.max(1,...byStage.map(x=>x.n));
-  const pillars=[1,2,3,4];
+  const pillars=[1,2,3,4,5];
   const byPillar=pillars.map(p=>{const items=active.filter(o=>parseInt(o.pillar)===p);
     return{p,n:items.length,gn:items.reduce((a,o)=>a+(parseFloat(o.estimated_size)||0),0),
       wf:items.reduce((a,o)=>a+dealFee(o)*dealProb(o),0)};}).filter(x=>x.n>0);
@@ -1682,7 +1685,7 @@ window.renderOpps=function(){
   }).join('');
 };
 
-function pillarShort(p){return{1:'P1 Iroko',2:'P2 Alpha',3:'P3 Advisory',4:'P4 Risk'}[p]||'P'+p;}
+function pillarShort(p){return{1:'P1 Iroko',2:'P2 Alpha',3:'P3 Advisory',4:'P4 Risk',5:'P5 Principal'}[p]||'P'+p;}
 function stageLabel(s){return STL[s]||s;}
 function ctypeL(t){return{sa_bank:'SA bank',african_bank:'African bank',non_bank_inst:'Non-bank inst.',corporate:'Corporate',sovereign:'Sovereign',development_fi:'DFI',other:'Other'}[t]||t;}
 function srcL(s){return{iroko_book:'Iroko book',resgro_origination:'Resgro origination',inbound:'Inbound',referral:'Referral',conference:'Event',other:'Other'}[s]||s;}
