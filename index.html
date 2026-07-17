@@ -893,7 +893,10 @@ textarea.fi{resize:vertical;min-height:72px}
     <div class="fg"><label class="fl">To *</label><input class="fi" type="email" id="s-to" placeholder="billing@company.co.za"></div>
     <div class="fg"><label class="fl">Subject</label><input class="fi" id="s-subject"></div>
     <div class="fg"><label class="fl">Message</label><textarea class="fi" id="s-msg" style="min-height:110px"></textarea></div>
-    <div class="cg" style="margin-bottom:1rem;font-size:.76rem">The invoice PDF is generated and attached automatically. Sending marks a draft as <strong>sent</strong>.</div>
+    <div class="cg" style="margin-bottom:1rem;font-size:.76rem">
+      The PDF is generated, attached, and a copy of the email is <strong>BCC&rsquo;d to you</strong>. Sending marks a draft as <strong>sent</strong>.<br>
+      PDF also saves to <strong id="s-dir">Downloads</strong> &middot; <a href="#" onclick="pickInvDir();return false" style="color:var(--bronzed)">choose folder&hellip;</a>
+    </div>
     <div class="macts">
       <button class="btnp" id="s-send-btn" onclick="submitSend()" style="flex:1">&#9993; Send email</button>
       <button class="btns" onclick="sendViaMailApp()" title="Open your own mail app instead (attach the PDF yourself)">Use mail app</button>
@@ -2952,9 +2955,68 @@ async function invPdfBase64(i){
   }
   return doc.output('datauristring').split(',')[1];
 }
+/* ── Local save destination (File System Access API, desktop Chrome/Edge) ──
+   The chosen directory handle persists in IndexedDB; elsewhere (phone,
+   Firefox, Safari) sent PDFs fall back to a normal download. */
+function idbKV(op,key,val){return new Promise((res,rej)=>{
+  const o=indexedDB.open('resgro-kv',1);
+  o.onupgradeneeded=()=>o.result.createObjectStore('kv');
+  o.onerror=()=>rej(o.error);
+  o.onsuccess=()=>{
+    const db=o.result;
+    const tx=db.transaction('kv',op==='get'?'readonly':'readwrite');
+    const st=tx.objectStore('kv');
+    const r=op==='get'?st.get(key):op==='set'?st.put(val,key):st.delete(key);
+    r.onsuccess=()=>{res(r.result);db.close();};
+    r.onerror=()=>{rej(r.error);db.close();};
+  };
+});}
+window.pickInvDir=async()=>{
+  if(!window.showDirectoryPicker){toast('Folder picking needs desktop Chrome or Edge — PDFs will download instead','err');return;}
+  try{
+    const h=await showDirectoryPicker({id:'resgro-invoices',mode:'readwrite'});
+    await idbKV('set','invdir',h);
+    updateInvDirLabel();
+    toast('Sent invoices will be saved to “'+h.name+'”','ok');
+  }catch(e){/* user cancelled the picker */}
+};
+async function getInvDir(){
+  try{
+    const h=await idbKV('get','invdir');
+    if(!h)return null;
+    if(await h.queryPermission({mode:'readwrite'})==='granted')return h;
+    if(await h.requestPermission({mode:'readwrite'})==='granted')return h;
+  }catch(e){}
+  return null;
+}
+async function updateInvDirLabel(){
+  const el=document.getElementById('s-dir');if(!el)return;
+  const h=await idbKV('get','invdir').catch(()=>null);
+  el.textContent=h?'“'+h.name+'” folder':'Downloads';
+}
+async function saveInvPdfLocal(i,base64){
+  const bytes=Uint8Array.from(atob(base64),c=>c.charCodeAt(0));
+  const blob=new Blob([bytes],{type:'application/pdf'});
+  const name=i.number+'.pdf';
+  const h=await getInvDir();
+  if(h){
+    try{
+      const fh=await h.getFileHandle(name,{create:true});
+      const w=await fh.createWritable();
+      await w.write(blob);await w.close();
+      return 'saved to “'+h.name+'”';
+    }catch(e){/* handle revoked or drive missing — fall through to download */}
+  }
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);a.download=name;
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+  return 'downloaded';
+}
 window.openSendModal=(id)=>{
   const i=invs.find(x=>x.id===id);if(!i)return;
   const b=i.bill_to||{};
+  updateInvDirLabel();
   document.getElementById('s-id').value=id;
   document.getElementById('send-sub').textContent=i.number+' — '+(b.company||'')+' — '+fmtZAR(invTotal(i));
   document.getElementById('s-to').value=b.email||knownCustField(b.company,'email')||'';
@@ -2993,8 +3055,10 @@ window.submitSend=async()=>{
     const status=i.status==='draft'?'sent':i.status;
     await sb.from('invoices').update({bill_to,status}).eq('id',id);
     Object.assign(i,{bill_to,status});
+    let savedNote='';
+    try{savedNote=await saveInvPdfLocal(i,pdf_base64);}catch(e){}
     closeSendModal();renderInvoices();
-    toast('Invoice '+i.number+' emailed to '+to,'ok');
+    toast('Invoice '+i.number+' emailed to '+to+(savedNote?' · PDF '+savedNote:''),'ok');
   }catch(e){
     toast('Email failed: '+(e&&e.message||e),'err');
   }finally{

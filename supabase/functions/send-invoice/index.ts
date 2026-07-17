@@ -23,10 +23,10 @@ function json(body: unknown, status = 200): Response {
   });
 }
 
-// Resolve the Resend key: env secret wins; otherwise read it from Supabase
-// Vault via the service-role-only get_vault_secret() RPC.
-async function getResendKey(): Promise<string | null> {
-  const env = Deno.env.get("RESEND_API_KEY");
+// Resolve config: env secret wins; otherwise read from Supabase Vault via
+// the service-role-only get_vault_secret() RPC.
+async function secret(name: string): Promise<string | null> {
+  const env = Deno.env.get(name);
   if (env) return env;
   try {
     const url = Deno.env.get("SUPABASE_URL");
@@ -39,7 +39,7 @@ async function getResendKey(): Promise<string | null> {
         Authorization: `Bearer ${srk}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ secret_name: "RESEND_API_KEY" }),
+      body: JSON.stringify({ secret_name: name }),
     });
     if (!r.ok) return null;
     const v = await r.json();
@@ -79,7 +79,7 @@ Deno.serve(async (req) => {
     return json({ error: "Attachment too large" }, 413);
   }
 
-  const key = (await getResendKey());
+  const key = await secret("RESEND_API_KEY");
   if (!key) {
     return json(
       { error: "RESEND_API_KEY is not configured — add it to Vault or Edge Function secrets" },
@@ -87,8 +87,8 @@ Deno.serve(async (req) => {
     );
   }
   const from =
-    Deno.env.get("INVOICE_FROM") ?? "Resgro Capital <invoices@resgrocapital.com>";
-  const bcc = Deno.env.get("INVOICE_BCC") || undefined;
+    (await secret("INVOICE_FROM")) ?? "Resgro Capital <invoices@resgrocapital.com>";
+  const bcc = (await secret("INVOICE_BCC")) || undefined;
 
   const r = await fetch("https://api.resend.com/emails", {
     method: "POST",
