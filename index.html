@@ -667,8 +667,7 @@ textarea.fi{resize:vertical;min-height:72px}
       <div class="fg"><label class="fl">Stage *</label><select class="fsel" id="o-stage">
         <option value="idea">Idea &mdash; not yet approached</option>
         <option value="qualifying">Qualifying &mdash; initial conversation had</option>
-        <option value="developing">Developing &mdash; proposal / NDA stage</option>
-        <option value="ready">Ready &mdash; term sheet or mandate signed</option>
+        <option value="active">Active &mdash; deal in motion (post-qualifying)</option>
         <option value="on_hold">On hold</option>
         <option value="passed">Passed &mdash; not pursuing</option>
       </select></div>
@@ -1010,7 +1009,7 @@ const OPP_SEEDS=[
   /* P1 — IROKO BOOK (live mandates Iroko is executing) */
   {title:'Ecobank Nigeria USD 400m TRS',description:'BSO / TRS to provide RWA-SOL relief on Ecobank Nigeria balance sheet. CAR 7%, materially below Nigerian floor. Counterparty: ENG. Iroko live mandate. Resgro role: SA institutional investor distribution via Marula PCC.',pillar:1,stage:'qualifying',likelihood:'medium',client_name:'Ecobank Nigeria',client_type:'african_bank',deal_type:'TRS / BSO',source:'iroko_book',estimated_size:400,estimated_fee_pct:0.25,estimated_months_to_close:6,iroko_relevant:true,fais_required:true,next_action:'Confirm SA investor appetite and finalise Marula cell structure'},
   {title:'Oragroup AT1 USD 200m',description:'AT1 capital raise for Oragroup. USD 200m. Iroko mandate. Distribution into SA / Mauritius institutional investors via Marula.',pillar:1,stage:'qualifying',likelihood:'medium',client_name:'Oragroup',client_type:'african_bank',deal_type:'AT1 capital',source:'iroko_book',estimated_size:200,estimated_fee_pct:0.25,estimated_months_to_close:9,iroko_relevant:true,fais_required:true,next_action:'Targeted teaser to SA pension funds via Marula'},
-  {title:'BGFI CI — TCR Balance Sheet Enhancement EUR 461m',description:'BGFI Côte d\'Ivoire balance sheet enhancement via TCR structure. EUR 461m. Iroko live mandate.',pillar:1,stage:'developing',likelihood:'medium',client_name:'BGFI Côte d\'Ivoire',client_type:'african_bank',deal_type:'TCR / BSO',source:'iroko_book',estimated_size:500,estimated_fee_pct:0.25,estimated_months_to_close:6,iroko_relevant:true,fais_required:true,next_action:'SA investor distribution under Iroko mandate'},
+  {title:'BGFI CI — TCR Balance Sheet Enhancement EUR 461m',description:'BGFI Côte d\'Ivoire balance sheet enhancement via TCR structure. EUR 461m. Iroko live mandate.',pillar:1,stage:'active',likelihood:'medium',client_name:'BGFI Côte d\'Ivoire',client_type:'african_bank',deal_type:'TCR / BSO',source:'iroko_book',estimated_size:500,estimated_fee_pct:0.25,estimated_months_to_close:6,iroko_relevant:true,fais_required:true,next_action:'SA investor distribution under Iroko mandate'},
   {title:'BGFI CI — Commodity Trade Finance',description:'Commodity trade finance facility for BGFI CI. Iroko mandate. TCR structure.',pillar:1,stage:'qualifying',likelihood:'medium',client_name:'BGFI Côte d\'Ivoire',client_type:'african_bank',deal_type:'Trade finance / TCR',source:'iroko_book',estimated_size:200,estimated_fee_pct:0.25,estimated_months_to_close:6,iroko_relevant:true,fais_required:true,next_action:'Confirm sizing and execution timeline with Iroko'},
   {title:'BGFI CI USD 70m insurance-wrapped',description:'USD 70m facility for BGFI CI with insurance wrap. Apr 2026 mandate.',pillar:1,stage:'qualifying',likelihood:'medium',client_name:'BGFI Côte d\'Ivoire',client_type:'african_bank',deal_type:'Insurance-wrapped facility',source:'iroko_book',estimated_size:70,estimated_fee_pct:0.25,estimated_months_to_close:6,iroko_relevant:true,fais_required:true,next_action:'Identify insurance provider; SA investor distribution'},
   {title:'Benin EUR 915m roads',description:'Republic of Benin road infrastructure financing. EUR 915m. Sovereign exposure via BGFI Benin. Iroko mandate.',pillar:1,stage:'qualifying',likelihood:'low',client_name:'Republic of Benin / BGFI Benin',client_type:'sovereign',deal_type:'Infrastructure / Sovereign',source:'iroko_book',estimated_size:1000,estimated_fee_pct:0.25,estimated_months_to_close:12,iroko_relevant:true,fais_required:true,next_action:'Iroko-led; Resgro to scope DFI co-investors'},
@@ -1235,15 +1234,14 @@ function dashItems(items,view){
   return items.map(dashCard).join('');
 }
 function renderDash(){
-  /* "Active" = deals in motion. Idea-stage (and on-hold/passed) live on the
-     Opportunities page, not the dashboard. */
-  const active=opps.filter(o=>['qualifying','developing','ready'].includes(o.stage));
+  /* Dashboard shows ACTIVE deals only — the stage after qualifying.
+     Idea, qualifying, on-hold and passed live on the Opportunities page. */
+  const active=opps.filter(o=>o.stage==='active');
   const P=dashPrefs();const view=P.view||'cards';const sort=P.sort||'completion';
   const group=(sort==='manual')?'none':(P.group||'pillar');const order=P.order||[];
   const totNotional=active.reduce((s,o)=>s+(parseFloat(o.estimated_size)||0),0);
   const totValue=active.reduce((s,o)=>s+dealFee(o),0);
   const nearClose=active.filter(o=>dealCompletion(o)>=60).length;
-  const stages=['qualifying','developing','ready'];const stTot=active.length||1;
   let displayGroups;
   if(group==='pillar'){
     displayGroups=[1,2,3,4].map(p=>({label:PMETA[p].n,color:PMETA[p].c,items:dashSortItems(active.filter(o=>parseInt(o.pillar)===p),sort,order)})).filter(g=>g.items.length);
@@ -1264,10 +1262,6 @@ function renderDash(){
     <div class="dbk-stat"><div class="l">Total notional</div><div class="v" style="color:var(--blue)">${fmtUSD(totNotional)}</div><div class="s">facility size</div></div>
     <div class="dbk-stat"><div class="l">Near close</div><div class="v" style="color:var(--green)">${nearClose}</div><div class="s">60%+ complete</div></div>
   </div>
-  <div class="dbk-stagewrap">
-    <div class="dbk-stagebar">${stages.map(s=>{const n=active.filter(o=>o.stage===s).length;return n?`<div title="${STL[s]}: ${n}" style="width:${n/stTot*100}%;background:${STC[s]}"></div>`:'';}).join('')}</div>
-    <div class="dbk-legend">${stages.map(s=>{const n=active.filter(o=>o.stage===s).length;return`<span><i style="background:${STC[s]}"></i>${STL[s]} ${n}</span>`;}).join('')}</div>
-  </div>
   <div class="dbk-toolbar">
     <span class="dbk-tb-l">View</span>${seg('view','cards','Cards')}${seg('view','compact','Compact')}${seg('view','table','Table')}
     <span class="dbk-tb-sep"></span>
@@ -1275,7 +1269,7 @@ function renderDash(){
     ${sort!=='manual'?`<span class="dbk-tb-sep"></span><span class="dbk-tb-l">Group</span>${seg('group','pillar','Pillar')}${seg('group','none','Flat')}`:`<button class="fbtn" onclick="resetDashOrder()" style="margin-left:auto">&#8635; Reset order</button>`}
   </div>
   ${sort==='manual'?'<div class="dbk-hint">&#9776; Drag the handle to reorder &mdash; your order is saved on this device.</div>':''}
-  ${active.length?displayGroups.map(g=>`<div class="dbk-grp">${g.label?`<div class="dbk-grp-h"><span class="dbk-dot" style="background:${g.color}"></span><span class="dbk-grp-t">${g.label}</span><span class="dbk-grp-m">${g.items.length} deal${g.items.length===1?'':'s'} &middot; ${fmtUSD(g.items.reduce((s,o)=>s+dealFee(o),0))} value</span></div>`:''}${dashItems(g.items,view)}</div>`).join(''):'<div class="empty"><div class="empi">&#9670;</div><div class="empt">No live opportunities</div><div class="empd">Add a deal in the Opportunities view to see it here</div></div>'}`;
+  ${active.length?displayGroups.map(g=>`<div class="dbk-grp">${g.label?`<div class="dbk-grp-h"><span class="dbk-dot" style="background:${g.color}"></span><span class="dbk-grp-t">${g.label}</span><span class="dbk-grp-m">${g.items.length} deal${g.items.length===1?'':'s'} &middot; ${fmtUSD(g.items.reduce((s,o)=>s+dealFee(o),0))} value</span></div>`:''}${dashItems(g.items,view)}</div>`).join(''):'<div class="empty"><div class="empi">&#9670;</div><div class="empt">No active deals</div><div class="empd">Move an opportunity to the Active stage to see it here</div></div>'}`;
 }
 
 /* ── COMPANY VIEW ──────────────────────────────────────────────────────── */
@@ -1462,10 +1456,12 @@ function renderAct(){
 }
 
 /* ── OPPORTUNITIES ─────────────────────────────────────────────────────── */
-const STC={idea:'var(--ink4)',qualifying:'var(--teal)',developing:'var(--amber)',ready:'var(--green)',on_hold:'var(--ink4)',passed:'var(--red)'};
-const STL={idea:'Idea',qualifying:'Qualifying',developing:'Developing',ready:'Ready',on_hold:'On hold',passed:'Passed'};
+/* developing/ready were collapsed into 'active' (migrated in DB); the
+   aliases below keep any stale rows rendering sanely. */
+const STC={idea:'var(--ink4)',qualifying:'var(--teal)',active:'var(--green)',developing:'var(--green)',ready:'var(--green)',on_hold:'var(--ink4)',passed:'var(--red)'};
+const STL={idea:'Idea',qualifying:'Qualifying',active:'Active',developing:'Active',ready:'Active',on_hold:'On hold',passed:'Passed'};
 const LHC={high:'var(--green)',medium:'var(--amber)',low:'var(--red)',uncertain:'var(--ink4)'};
-const GATE_STAGES_REQUIRED=['developing','ready']; /* §9 must be clear from 'developing' onwards */
+const GATE_STAGES_REQUIRED=['active']; /* §9 must be clear once a deal is active */
 
 function gateState(oppId){
   try{
@@ -1491,7 +1487,7 @@ window.renderOppKanban=function(){
   const el=document.getElementById('opp-kanban');if(!el)return;
   let filtered=[...opps];
   if(window.oppF)filtered=filtered.filter(o=>parseInt(o.pillar)===window.oppF);
-  const stages=['idea','qualifying','developing','ready'];
+  const stages=['idea','qualifying','active'];
   el.innerHTML=`<div class="kanban">${stages.map(s=>{
     const items=filtered.filter(o=>o.stage===s);
     return`<div class="kanban-col"><div class="kc-head">${STL[s]}<span class="kc-count">${items.length}</span></div>
@@ -1533,7 +1529,7 @@ const MILESTONE_PCT={
   generic:{engaged:10,eoi:20,assessing:60,approved:100},
   /* 3:{ ...bespoke P3 advisory milestones... } */
 };
-const STAGE_PCT={idea:5,qualifying:25,developing:60,ready:90,on_hold:0,passed:0};
+const STAGE_PCT={idea:5,qualifying:25,active:60,developing:60,ready:90,on_hold:0,passed:0};
 function dealCompletion(o){
   const map=MILESTONE_PCT[parseInt(o.pillar)]||MILESTONE_PCT.generic;
   if(o.execution_milestone==='custom'&&o.execution_prob!=null)
@@ -1558,7 +1554,7 @@ function renderDealTracking(){
   const weightedFee=active.reduce((s,o)=>s+dealFee(o)*dealProb(o),0);
   const ready=active.filter(o=>{try{return gatePct(o.id)===100;}catch(e){return false;}}).length;
   const stalled=active.filter(dealStalled).length;
-  const stages=['idea','qualifying','developing','ready'];
+  const stages=['idea','qualifying','active'];
   const byStage=stages.map(s=>{const items=active.filter(o=>o.stage===s);
     return{s,n:items.length,wf:items.reduce((a,o)=>a+dealFee(o)*dealProb(o),0)};});
   const maxN=Math.max(1,...byStage.map(x=>x.n));
@@ -1678,7 +1674,7 @@ window.renderOpps=function(){
         <div class="arow" style="margin-top:1rem">
           <button class="btns" onclick="openOppModal('${o.id}')">&#9998; Edit</button>
           <select class="fsel" style="padding:.4rem .65rem;font-size:.78rem;width:auto" onchange="updOppStage('${o.id}',this.value)">
-            ${['idea','qualifying','developing','ready','on_hold','passed'].map(s=>`<option value="${s}"${o.stage===s?' selected':''}>${STL[s]}</option>`).join('')}
+            ${['idea','qualifying','active','on_hold','passed'].map(s=>`<option value="${s}"${o.stage===s?' selected':''}>${STL[s]}</option>`).join('')}
           </select>
         </div>
       </div>
