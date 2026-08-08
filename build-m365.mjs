@@ -15,7 +15,7 @@ const must = (label, before) => {
 //    the app's module script.
 must('module tag', '\n<script type="module">\nimport{createClient}');
 h = h.replace('\n<script type="module">\nimport{createClient}',
-  '\n<script src="https://alcdn.msauth.net/browser/3.28.1/js/msal-browser.min.js"></script>\n<script type="module">\nimport{createClient}');
+  '\n<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3.27.0/lib/msal-browser.min.js"></script>\n<script type="module">\nimport{createClient}');
 
 // 2) Swap the Supabase import + createClient block for the M365 adapter.
 const initBefore =
@@ -27,7 +27,22 @@ must('init block', initBefore);
 h = h.replace(initBefore,
 `import{createM365Client}from'./m365-adapter.js';
 const M365={clientId:'33cc1f12-5385-4ddb-8832-6122e3beed83',tenant:'resgrocapital.com',cc:'aphile@resgrocapital.com'};
-const sb=await createM365Client(M365);`);
+let sb=null;
+async function ensureClient(){ if(!sb) sb=await createM365Client(M365); return sb; }`);
+
+// 2b) Make bootstrap failures VISIBLE: create the client inside init()'s try
+//     (so MSAL/tenant/consent errors surface on screen instead of hanging the
+//     loading dots), and expose sb to iframes via a live getter.
+must('init try', `  try{
+    const{data:{session}}=await sb.auth.getSession();`);
+h = h.replace(`  try{
+    const{data:{session}}=await sb.auth.getSession();`,
+`  try{
+    await ensureClient();
+    const{data:{session}}=await sb.auth.getSession();`);
+
+must('__resgro', 'window.__resgro = { sb,');
+h = h.replace('window.__resgro = { sb,', 'window.__resgro = { get sb(){return sb;},');
 
 // 3) Swap the email/password auth form for a "Sign in with Microsoft" button
 //    plus a one-time data-migration link.
@@ -56,6 +71,7 @@ h = h.replace(loginBefore,
 `window.doLogin=async()=>{
   const btn=document.getElementById('lbtn');btn.disabled=true;btn.textContent='Signing in…';
   try{
+    await ensureClient();
     const{error}=await sb.auth.signIn();
     if(error)throw new Error(error.message);
     btn.textContent='Setting up your workspace…';
@@ -75,6 +91,7 @@ window.doMigrate=async()=>{
   const say=m=>{el.textContent=m;};
   try{
     say('Signing in to Microsoft…');
+    await ensureClient();
     await sb.auth.signIn();await sb._ensureAllLists();
     say('Signing in to Supabase…');
     const{createClient}=await import('https://esm.sh/@supabase/supabase-js@2');
