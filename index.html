@@ -2977,7 +2977,7 @@ window.emailInv=(id)=>{
   const b=i.bill_to||{};
   const email=b.email||knownCustField(b.company,'email');
   const subj=encodeURIComponent(i.number+' — Resgro Capital (Pty) Ltd');
-  const body=encodeURIComponent('Hi '+(b.contact||knownCustField(b.company,'contact')||'')+',\n\nPlease find attached invoice '+i.number+' for '+fmtZAR(invTotal(i))+', due '+(i.due_date||'')+'.\n\nBanking details are on the invoice — please use '+i.number+' as the payment reference.\n\nBest regards\nAphile Molefe\nResgro Capital (Pty) Ltd');
+  const body=encodeURIComponent('Hi '+(b.contact||knownCustField(b.company,'contact')||'')+',\n\nPlease find attached invoice '+i.number+' for '+fmtZAR(invTotal(i))+', '+(i.due_date?'due '+fmtD(i.due_date):'due on receipt')+'.\n\nBanking details are on the invoice — please use '+i.number+' as the payment reference.\n\nBest regards\nAphile Molefe\nResgro Capital (Pty) Ltd');
   location.href='mailto:'+email+'?subject='+subj+'&body='+body;
   toast(email?'Remember to attach the PDF (Print / PDF button)':'No email on file for this customer — add it to the invoice','ok');
 };
@@ -3142,7 +3142,8 @@ window.openSendModal=(id)=>{
   document.getElementById('s-subject').value=i.number+' — Resgro Capital (Pty) Ltd';
   const contact=b.contact||knownCustField(b.company,'contact')||'';
   const paid=invPaidAmt(i);
-  document.getElementById('s-msg').value='Hi '+(contact||'there')+',\n\nPlease find attached invoice '+i.number+' for '+fmtZAR(invTotal(i))+(paid>0?' (balance due '+fmtZAR(invBalance(i))+')':'')+', due '+(i.due_date||'')+'.\n\nBanking details are on the invoice — please use '+i.number+' as the payment reference.\n\nBest regards\nAphile Molefe\nResgro Capital (Pty) Ltd';
+  const duePhrase=i.due_date?'due '+fmtD(i.due_date):'due on receipt';
+  document.getElementById('s-msg').value='Hi '+(contact||'there')+',\n\nPlease find attached invoice '+i.number+' for '+fmtZAR(invTotal(i))+(paid>0?' (balance due '+fmtZAR(invBalance(i))+')':'')+', '+duePhrase+'.\n\nBanking details are on the invoice — please use '+i.number+' as the payment reference.\n\nBest regards\nAphile Molefe\nResgro Capital (Pty) Ltd';
   document.getElementById('sendmodal').classList.add('open');
 };
 window.closeSendModal=()=>document.getElementById('sendmodal').classList.remove('open');
