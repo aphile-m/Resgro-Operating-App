@@ -2,7 +2,7 @@
   "name": "Resgro Operating App",
   "short_name": "Resgro",
   "description": "Resgro Capital operating app — deal book, pipeline, invoicing and decisions",
-  "start_url": "./index.html",
+  "start_url": "./m365.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
