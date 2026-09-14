@@ -2,10 +2,12 @@
    Network-first for same-origin requests so every deploy shows up immediately;
    the cache is only a fallback for offline opens. Cross-origin requests
    (Supabase, esm.sh, Google Fonts, the Anthropic API) are never intercepted. */
-const V = 'resgro-v1';
+const V = 'resgro-v2';
 const CORE = [
   './',
   './index.html',
+  './m365.html',
+  './m365-adapter.js',
   './p1-model.html',
   './iroko-calculator.html',
   './manifest.webmanifest',
@@ -41,7 +43,7 @@ self.addEventListener('fetch', (e) => {
       })
       .catch(() =>
         caches.match(req, { ignoreSearch: true }).then(
-          (r) => r || (req.mode === 'navigate' ? caches.match('./index.html') : Response.error())
+          (r) => r || (req.mode === 'navigate' ? caches.match('./m365.html') : Response.error())
         )
       )
   );

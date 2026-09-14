@@ -6,7 +6,7 @@
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 
-let h = readFileSync('index.html', 'utf8');
+let h = readFileSync('app-supabase.html', 'utf8');
 const must = (label, before) => {
   if (!h.includes(before)) { console.error('BUILD FAIL — anchor not found:', label); process.exit(1); }
 };
