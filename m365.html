@@ -495,6 +495,7 @@ textarea.fi{resize:vertical;min-height:72px}
     <div class="ssec">
       <div class="slbl">Finance</div>
       <button class="si" onclick="goV('invoices',this)"><span class="ic">&#82;</span>Invoices<span class="sbadge" id="invbadge" style="display:none;background:var(--amberl);color:var(--amber)"></span></button>
+      <button class="si" onclick="goV('accounts',this)"><span class="ic">&#9776;</span>Accounts</button>
     </div>
     <div class="sdiv"></div>
     <div class="ssec">
@@ -582,6 +583,15 @@ textarea.fi{resize:vertical;min-height:72px}
       </div>
       <div id="mm-list"></div>
     </div>
+    <div class="view" id="v-accounts">
+      <div class="pgh" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem">
+        <div><div class="pgt">Accounts</div><div class="pgs">Customer accounts &mdash; billed, paid &amp; statements</div></div>
+        <div style="margin-left:auto"><button class="btnadd" onclick="openAcctModal()">+ New account</button></div>
+      </div>
+      <div id="acct-stats"></div>
+      <div id="acct-list"></div>
+    </div>
+
     <div class="view" id="v-invoices">
       <div class="pgh" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem">
         <div><div class="pgt">Invoices</div><div class="pgs">Fee invoicing &amp; receivables &mdash; Resgro Capital (Pty) Ltd</div></div>
@@ -877,6 +887,8 @@ textarea.fi{resize:vertical;min-height:72px}
     <div class="msub" id="invnum-sub">Number assigned on save</div>
     <input type="hidden" id="i-id">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:.875rem">
+      <div class="fg" style="grid-column:1/-1"><label class="fl">Account <span style="color:var(--ink4);font-weight:400">&mdash; link to a customer account (auto-fills details)</span></label>
+        <select class="fsel" id="i-account" onchange="invAcctPick()"><option value="">&mdash; None / ad-hoc &mdash;</option></select></div>
       <div class="fg"><label class="fl">Bill to — company *</label><input class="fi" id="i-company" placeholder="e.g. Kgabi Holdings (Pty) Ltd" onchange="invCompanyAutofill()"></div>
       <div class="fg"><label class="fl">Contact person</label><input class="fi" id="i-contact" placeholder="e.g. Kgabi"></div>
       <div class="fg"><label class="fl">Company reg no</label><input class="fi" id="i-reg" placeholder="e.g. 2026/000000/07"></div>
@@ -961,6 +973,37 @@ textarea.fi{resize:vertical;min-height:72px}
   </div>
 </div>
 
+<!-- ACCOUNT MODAL -->
+<div class="mov" id="acctmodal">
+  <div class="modal">
+    <div class="mtitle" id="acct-mt">New account</div>
+    <div class="msub" id="acct-mnum">Account number assigned on save</div>
+    <input type="hidden" id="a-id">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.875rem">
+      <div class="fg" style="grid-column:1/-1"><label class="fl">Account name *</label><input class="fi" id="a-name" placeholder="e.g. UBU Holdings (Pty) Ltd"></div>
+      <div class="fg"><label class="fl">Contact person</label><input class="fi" id="a-contact" placeholder="e.g. Portia Derby"></div>
+      <div class="fg"><label class="fl">Email</label><input class="fi" id="a-email" placeholder="billing@company.co.za"></div>
+      <div class="fg"><label class="fl">Company reg no</label><input class="fi" id="a-reg" placeholder="e.g. 2026/000000/07"></div>
+      <div class="fg"><label class="fl">Phone</label><input class="fi" id="a-phone" placeholder="+27 …"></div>
+      <div class="fg" style="grid-column:1/-1"><label class="fl">Address</label><input class="fi" id="a-addr" placeholder="Street, suburb, city, postal code"></div>
+      <div class="fg" style="grid-column:1/-1"><label class="fl">Also billed as (alternate names, comma-separated)</label><input class="fi" id="a-aliases" placeholder="e.g. Ubu Holdings, UBU"></div>
+      <div class="fg" style="grid-column:1/-1"><label class="fl">Notes</label><textarea class="fi" id="a-notes" placeholder="Relationship, terms, context…"></textarea></div>
+    </div>
+    <div class="macts"><button class="btnp" onclick="submitAcct()" style="flex:1" id="a-submit-btn">Save account</button><button class="btns" onclick="closeAcctModal()">Cancel</button></div>
+  </div>
+</div>
+
+<!-- STATEMENT OVERLAY -->
+<div class="mov" id="stmtmodal">
+  <div class="modal" style="max-width:820px">
+    <div id="stmt-body"></div>
+    <div class="macts" style="margin-top:1rem">
+      <button class="btnp" onclick="printStatement()" style="flex:1">&#128424; Print / PDF statement</button>
+      <button class="btns" onclick="closeStatement()">Close</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3.27.0/lib/msal-browser.min.js"></script>
@@ -995,7 +1038,7 @@ window.toggleTheme=()=>applyTheme(document.documentElement.dataset.theme==='dark
   let t='light';try{t=localStorage.getItem('resgro_theme')||'light';}catch(e){}
   applyTheme(t);
 })();
-let me=null,myP=null,decs=[],users=[],coms=[],vers=[],atts=[],opps=[],docs=[],minutes=[],intros=[],invs=[],invTableOk=false;
+let me=null,myP=null,decs=[],users=[],coms=[],vers=[],atts=[],opps=[],docs=[],minutes=[],intros=[],invs=[],invTableOk=false,accts=[],acctsOk=false;
 window.introF=null;
 window.stF=null;window.phF=null;window.srF='';window.oppF=null;window.mmF=null;
 
@@ -1106,6 +1149,18 @@ async function loadAll(){
     const inv=await sb.from('invoices').select('*').order('number');
     if(!inv.error){invTableOk=true;invs=inv.data||[];await seedInvoices();}
   }catch(e){invTableOk=false;}
+
+  /* Accounts — customer register; degrade gracefully if the table is absent. */
+  try{
+    const ac=await sb.from('accounts').select('*').order('account_number');
+    if(!ac.error){
+      acctsOk=true;
+      const raw=ac.data||[];
+      const marker=raw.find(x=>x.name==='__seed_accts');
+      accts=raw.filter(x=>!(x.name||'').startsWith('__seed'));
+      if(!marker&&invTableOk)await backfillAccounts();   /* one-time: build accounts from existing invoices */
+    }
+  }catch(e){acctsOk=false;}
 
   /* DECISIONS reseed on SV bump — fresh slate for Resgro */
   const decMarker=(d.data||[]).find(x=>x.title==='__seed_v'+SV);
@@ -1224,6 +1279,7 @@ window.goV=(v,btn)=>{
   else if(v==='documents')renderDocs();
   else if(v==='minutes')renderMinutes();
   else if(v==='invoices')renderInvoices();
+  else if(v==='accounts')renderAccounts();
   else if(v==='iroko')renderIrokoAll();
   else if(v==='pillars')renderPillarsAll();
   else if(v==='roadmap')renderRoadmap();
@@ -2749,6 +2805,221 @@ async function seedInvoices(){
   const{error}=await sb.from('invoices').insert(rows);
   if(!error){const{data}=await sb.from('invoices').select('*').order('number');invs=data||[];}
 }
+/* ── ACCOUNTS & STATEMENTS ─────────────────────────────────────────────────
+   An account is a customer register entry with a stable number and metadata.
+   Invoices belong to an account by account_id, or (for legacy invoices) by a
+   name/alias match on bill_to.company — this canonicalises duplicate spellings
+   like "UBU Holdings" / "Ubu Holdings" into one account and one statement. */
+const normCo=s=>(s||'').trim().toLowerCase().replace(/\s+/g,' ');
+function accNextNumber(){
+  let mx=0;accts.forEach(a=>{const m=/^ACC-(\d+)$/.exec(a.account_number||'');if(m)mx=Math.max(mx,parseInt(m[1]));});
+  return 'ACC-'+String(mx+1).padStart(3,'0');
+}
+function acctNames(a){return [a.name,...(a.aliases||[])].map(normCo).filter(Boolean);}
+function invsForAccount(a){
+  const names=new Set(acctNames(a));
+  return invs.filter(i=>(i.account_id&&i.account_id===a.id)||names.has(normCo((i.bill_to||{}).company)));
+}
+const accBilled=a=>invsForAccount(a).reduce((s,i)=>s+invTotal(i),0);
+const accPaid=a=>invsForAccount(a).reduce((s,i)=>s+invPaidAmt(i),0);
+const accBalance=a=>accBilled(a)-accPaid(a);
+
+async function backfillAccounts(){
+  /* group existing invoices by normalised company; one account per group,
+     canonical name = the variant with the most capital letters (tiebreak longest). */
+  const groups={};
+  invs.forEach(i=>{const co=((i.bill_to||{}).company||'').trim();if(!co||co.includes('TBC'))return;
+    const k=normCo(co);(groups[k]=groups[k]||[]).push(co);});
+  const rows=[];
+  Object.values(groups).forEach(variants=>{
+    const uniq=[...new Set(variants)];
+    const canonical=uniq.slice().sort((a,b)=>{
+      const caps=x=>(x.match(/[A-Z]/g)||[]).length;
+      return caps(b)-caps(a)||b.length-a.length;})[0];
+    const aliases=uniq.filter(v=>v!==canonical);
+    const src=invs.find(i=>(i.bill_to||{}).company===canonical)||{};const b=src.bill_to||{};
+    rows.push({account_number:'',name:canonical,aliases,contact:b.contact||'',email:b.email||'',reg:b.reg||'',phone:'',addr:b.addr||'',notes:'',created_by:me.id});
+  });
+  /* assign sequential numbers */
+  let mx=0;let n=rows.length;
+  rows.forEach((r,idx)=>{r.account_number='ACC-'+String(idx+1).padStart(3,'0');});
+  if(rows.length){const{error}=await sb.from('accounts').insert(rows);if(error){console.warn('acct backfill',error.message);return;}}
+  await sb.from('accounts').insert({account_number:'ACC-000',name:'__seed_accts',aliases:[],created_by:me.id});
+  const{data}=await sb.from('accounts').select('*').order('account_number');
+  accts=(data||[]).filter(x=>!(x.name||'').startsWith('__seed'));
+}
+
+window.renderAccounts=function(){
+  const st=document.getElementById('acct-stats');const el=document.getElementById('acct-list');if(!el)return;
+  if(!acctsOk){st.innerHTML='<div class="cw" style="margin-bottom:1rem"><strong>Accounts table not found.</strong> Run <code>supabase_accounts_schema.sql</code>, then reload.</div>';el.innerHTML='';return;}
+  const totalBilled=accts.reduce((s,a)=>s+accBilled(a),0);
+  const totalPaid=accts.reduce((s,a)=>s+accPaid(a),0);
+  const outstanding=totalBilled-totalPaid;
+  st.innerHTML=`<div class="stats">
+    <div class="stat"><div class="slb">Accounts</div><div class="sv">${accts.length}</div><div class="ss">customer register</div></div>
+    <div class="stat"><div class="slb">Total billed</div><div class="sv" style="color:var(--bronzed)">${fmtZAR(totalBilled)}</div><div class="ss">across all invoices</div></div>
+    <div class="stat"><div class="slb">Collected</div><div class="sv" style="color:var(--green)">${fmtZAR(totalPaid)}</div><div class="ss">payments received</div></div>
+    <div class="stat"><div class="slb">Outstanding</div><div class="sv" style="color:${outstanding>0.005?'var(--amber)':'var(--ink4)'}">${fmtZAR(outstanding)}</div><div class="ss">still owed</div></div>
+  </div>`;
+  const list=accts.slice().sort((a,b)=>accBalance(b)-accBalance(a));
+  if(!list.length){el.innerHTML='<div class="empty"><div class="empi">&#9776;</div><div class="empt">No accounts yet</div><div class="empd">Create an account, or raise an invoice — accounts build automatically from invoices</div></div>';return;}
+  el.innerHTML=list.map(a=>{
+    const bal=accBalance(a),n=invsForAccount(a).length;
+    return `<div class="card" style="padding:.9rem 1.1rem;cursor:pointer" onclick="openStatement('${a.id}')" title="View statement">
+      <div style="display:flex;align-items:center;gap:.8rem;flex-wrap:wrap">
+        <div style="flex:1;min-width:200px">
+          <div style="font-weight:600;font-size:.92rem;color:var(--ink)">${a.name} <span style="font-weight:400;color:var(--ink4);font-size:.76rem">&middot; ${a.account_number}</span></div>
+          <div style="font-size:.74rem;color:var(--ink3)">${a.contact?a.contact+' &middot; ':''}${a.email||''} &middot; ${n} invoice${n===1?'':'s'}</div>
+        </div>
+        <div style="text-align:right"><div style="font-size:.68rem;color:var(--ink4)">billed ${fmtZAR(accBilled(a))} &middot; paid ${fmtZAR(accPaid(a))}</div>
+          <div style="font-family:var(--serif);font-size:1.15rem;color:${bal>0.005?'var(--amber)':'var(--green)'}">${fmtZAR(bal)} ${bal>0.005?'due':'settled'}</div></div>
+        <div style="display:flex;gap:.35rem" onclick="event.stopPropagation()">
+          <button class="btns" onclick="openAcctModal('${a.id}')" title="Edit">&#9998;</button>
+          <button class="btns" onclick="openStatement('${a.id}')">Statement &rarr;</button>
+        </div>
+      </div>
+    </div>`;}).join('');
+};
+
+window.openAcctModal=(id)=>{
+  const a=id?accts.find(x=>x.id===id):null;
+  document.getElementById('acct-mt').textContent=a?'Edit account':'New account';
+  document.getElementById('acct-mnum').textContent=a?a.account_number:'Account number assigned on save';
+  document.getElementById('a-submit-btn').textContent=a?'Save changes':'Save account';
+  const s=(el,v)=>{document.getElementById(el).value=v||'';};
+  document.getElementById('a-id').value=a?a.id:'';
+  s('a-name',a&&a.name);s('a-contact',a&&a.contact);s('a-email',a&&a.email);s('a-reg',a&&a.reg);
+  s('a-phone',a&&a.phone);s('a-addr',a&&a.addr);s('a-notes',a&&a.notes);
+  s('a-aliases',a&&(a.aliases||[]).join(', '));
+  document.getElementById('acctmodal').classList.add('open');
+};
+window.closeAcctModal=()=>document.getElementById('acctmodal').classList.remove('open');
+window.submitAcct=async()=>{
+  const name=document.getElementById('a-name').value.trim();
+  if(!name){toast('Account name is required','err');return;}
+  const id=document.getElementById('a-id').value;
+  const g=el=>document.getElementById(el).value.trim();
+  const aliases=g('a-aliases').split(',').map(x=>x.trim()).filter(Boolean);
+  const row={name,aliases,contact:g('a-contact'),email:g('a-email'),reg:g('a-reg'),phone:g('a-phone'),addr:g('a-addr'),notes:g('a-notes'),created_by:me.id};
+  if(!id)row.account_number=accNextNumber();
+  const res=id?await sb.from('accounts').update(row).eq('id',id):await sb.from('accounts').insert(row);
+  if(res.error){toast('Save failed: '+res.error.message,'err');return;}
+  const{data}=await sb.from('accounts').select('*').order('account_number');
+  accts=(data||[]).filter(x=>!(x.name||'').startsWith('__seed'));
+  closeAcctModal();renderAccounts();toast(id?'Account updated':'Account '+(row.account_number)+' created','ok');
+};
+
+/* Build dated statement lines: each invoice is a debit (billed on issue date),
+   each payment a credit (on last payment date). Running balance. */
+function stmtLines(a){
+  const lines=[];
+  invsForAccount(a).forEach(i=>{
+    lines.push({date:i.issue_date||'',ref:i.number,desc:'Invoice'+(i.status==='draft'?' (draft)':''),debit:invTotal(i),credit:0,_o:0});
+    const p=invPaidAmt(i);
+    if(p>0)lines.push({date:i.paid_date||i.issue_date||'',ref:i.number,desc:'Payment received',debit:0,credit:p,_o:1});
+  });
+  lines.sort((x,y)=>(x.date||'').localeCompare(y.date||'')||x._o-y._o);
+  let bal=0;lines.forEach(l=>{bal+=l.debit-l.credit;l.balance=bal;});
+  return lines;
+}
+window.openStatement=(id)=>{
+  const a=accts.find(x=>x.id===id);if(!a)return;
+  window.__stmtId=id;
+  const lines=stmtLines(a);
+  const billed=accBilled(a),paid=accPaid(a),bal=billed-paid;
+  const rows=lines.map(l=>`<tr>
+    <td style="padding:.4rem .5rem;font-size:.78rem;color:var(--ink3)">${l.date?fmtD(l.date):'&mdash;'}</td>
+    <td style="padding:.4rem .5rem;font-size:.8rem">${l.ref}</td>
+    <td style="padding:.4rem .5rem;font-size:.8rem;color:var(--ink2)">${l.desc}</td>
+    <td style="padding:.4rem .5rem;text-align:right;font-size:.8rem">${l.debit?fmtZAR(l.debit):''}</td>
+    <td style="padding:.4rem .5rem;text-align:right;font-size:.8rem;color:var(--green)">${l.credit?fmtZAR(l.credit):''}</td>
+    <td style="padding:.4rem .5rem;text-align:right;font-size:.8rem;font-weight:600">${fmtZAR(l.balance)}</td>
+  </tr>`).join('')||'<tr><td colspan="6" style="padding:1rem;text-align:center;color:var(--ink4)">No transactions yet</td></tr>';
+  document.getElementById('stmt-body').innerHTML=`
+    <div class="mtitle">Statement of account</div>
+    <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:.75rem;margin:.5rem 0 1rem">
+      <div><div style="font-weight:600;font-size:1rem;color:var(--ink)">${a.name}</div>
+        <div style="font-size:.76rem;color:var(--ink3)">${a.account_number}${a.contact?' &middot; '+a.contact:''}${a.email?' &middot; '+a.email:''}</div>
+        ${a.addr?`<div style="font-size:.72rem;color:var(--ink4)">${a.addr}</div>`:''}</div>
+      <div style="text-align:right"><div style="font-size:.72rem;color:var(--ink4)">as at ${fmtD(new Date().toISOString().slice(0,10))}</div></div>
+    </div>
+    <div class="stats" style="margin-bottom:1rem">
+      <div class="stat"><div class="slb">Total billed</div><div class="sv" style="color:var(--bronzed);font-size:1.1rem">${fmtZAR(billed)}</div></div>
+      <div class="stat"><div class="slb">Total paid</div><div class="sv" style="color:var(--green);font-size:1.1rem">${fmtZAR(paid)}</div></div>
+      <div class="stat"><div class="slb">Balance due</div><div class="sv" style="color:${bal>0.005?'var(--amber)':'var(--green)'};font-size:1.1rem">${fmtZAR(bal)}</div></div>
+    </div>
+    <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">
+      <thead><tr style="border-bottom:2px solid var(--paper3)">
+        <th style="padding:.4rem .5rem;text-align:left;font-size:.66rem;text-transform:uppercase;letter-spacing:.05em;color:var(--ink4)">Date</th>
+        <th style="padding:.4rem .5rem;text-align:left;font-size:.66rem;text-transform:uppercase;letter-spacing:.05em;color:var(--ink4)">Reference</th>
+        <th style="padding:.4rem .5rem;text-align:left;font-size:.66rem;text-transform:uppercase;letter-spacing:.05em;color:var(--ink4)">Description</th>
+        <th style="padding:.4rem .5rem;text-align:right;font-size:.66rem;text-transform:uppercase;letter-spacing:.05em;color:var(--ink4)">Billed</th>
+        <th style="padding:.4rem .5rem;text-align:right;font-size:.66rem;text-transform:uppercase;letter-spacing:.05em;color:var(--ink4)">Paid</th>
+        <th style="padding:.4rem .5rem;text-align:right;font-size:.66rem;text-transform:uppercase;letter-spacing:.05em;color:var(--ink4)">Balance</th>
+      </tr></thead><tbody>${rows}</tbody></table></div>`;
+  document.getElementById('stmtmodal').classList.add('open');
+};
+window.closeStatement=()=>document.getElementById('stmtmodal').classList.remove('open');
+
+window.printStatement=async()=>{
+  const a=accts.find(x=>x.id===window.__stmtId);if(!a)return;
+  const{jsPDF}=await import('https://esm.sh/jspdf@2.5.1');
+  const doc=new jsPDF({unit:'pt',format:'a4'});
+  const W=595.28,M=48;let y=68;
+  const ink=[42,49,66],gray=[107,115,138],light=[154,161,179],gold=[150,120,90],goldD=[122,97,71],green=[46,125,79],rule=[228,225,214];
+  doc.setFont('times','bold');doc.setFontSize(24);doc.setTextColor(...ink);
+  doc.text('Res',M,y);const w1=doc.getTextWidth('Res');
+  doc.setTextColor(...gold);doc.text('gro',M+w1,y);const w2=doc.getTextWidth('gro');
+  doc.setTextColor(...ink);doc.text(' Capital',M+w1+w2,y);
+  doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(...gray);
+  doc.text(RESGRO_FROM.reg+'  ·  '+RESGRO_FROM.tax,M,y+16);
+  doc.text(RESGRO_FROM.addr,M,y+28);doc.text(RESGRO_FROM.email,M,y+40);
+  doc.setFont('times','normal');doc.setFontSize(17);doc.setTextColor(...goldD);
+  doc.text('STATEMENT',W-M,y-8,{align:'right',charSpace:2});
+  doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(...gray);
+  doc.text('Account: '+a.account_number,W-M,y+8,{align:'right'});
+  doc.text('As at: '+fmtD(new Date().toISOString().slice(0,10)),W-M,y+20,{align:'right'});
+  y+=58;doc.setDrawColor(...gold);doc.setLineWidth(2);doc.line(M,y,W-M,y);y+=24;
+  doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(...light);doc.text('ACCOUNT',M,y,{charSpace:1});y+=13;
+  doc.setFontSize(11);doc.setTextColor(...ink);doc.text(a.name,M,y);y+=13;
+  doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(...gray);
+  [a.contact,a.email,a.addr].filter(Boolean).forEach(t=>{doc.text(String(t),M,y);y+=12;});
+  y+=14;
+  const cols=[M,M+70,M+300,W-M-150,W-M-75,W-M];
+  doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(...light);
+  doc.text('DATE',cols[0],y);doc.text('REFERENCE',cols[1],y);doc.text('DESCRIPTION',cols[2],y);
+  doc.text('BILLED',cols[3],y,{align:'right'});doc.text('PAID',cols[4],y,{align:'right'});doc.text('BALANCE',cols[5],y,{align:'right'});
+  y+=6;doc.setDrawColor(...rule);doc.setLineWidth(1);doc.line(M,y,W-M,y);y+=15;
+  doc.setFont('helvetica','normal');doc.setFontSize(9);
+  stmtLines(a).forEach(l=>{
+    if(y>780){doc.addPage();y=64;}
+    doc.setTextColor(...ink);
+    doc.text(l.date?fmtD(l.date):'—',cols[0],y);
+    doc.text(String(l.ref),cols[1],y);
+    doc.text(doc.splitTextToSize(l.desc,210),cols[2],y);
+    if(l.debit)doc.text(fmtZAR(l.debit),cols[3],y,{align:'right'});
+    if(l.credit){doc.setTextColor(...green);doc.text(fmtZAR(l.credit),cols[4],y,{align:'right'});doc.setTextColor(...ink);}
+    doc.setFont('helvetica','bold');doc.text(fmtZAR(l.balance),cols[5],y,{align:'right'});doc.setFont('helvetica','normal');
+    y+=8;doc.setDrawColor(...rule);doc.setLineWidth(.5);doc.line(M,y-4,W-M,y-4);y+=8;
+  });
+  y+=6;const billed=accBilled(a),paid=accPaid(a),bal=billed-paid;
+  const trow=(label,val,o={})=>{doc.setFont('helvetica',o.bold?'bold':'normal');doc.setFontSize(o.big?11:9.5);
+    doc.setTextColor(...(o.green?green:gray));doc.text(label,W-M-150,y,{align:'right'});
+    doc.setTextColor(...(o.green?green:o.gold?goldD:ink));doc.text(val,W-M,y,{align:'right'});y+=o.big?19:15;};
+  trow('Total billed',fmtZAR(billed),{});
+  trow('Total paid','-  '+fmtZAR(paid),{green:1});
+  doc.setDrawColor(...gold);doc.setLineWidth(1.5);doc.line(W-M-220,y-9,W-M,y-9);y+=5;
+  trow('Balance due',fmtZAR(bal),{bold:1,big:1,gold:1});
+  y+=20;if(y>720){doc.addPage();y=64;}
+  doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(...light);doc.text('PAYMENT DETAILS',M,y);y+=6;
+  const bank=(localStorage.getItem('resgro_inv_bank')||RESGRO_BANK).split('\n').filter(Boolean);
+  doc.setFillColor(250,248,244);doc.setDrawColor(...rule);doc.setLineWidth(1);
+  doc.roundedRect(M,y,(W-2*M)/2,bank.length*12+16,4,4,'FD');
+  doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(60,70,90);
+  bank.forEach((t,n)=>doc.text(t,M+10,y+14+n*12));
+  doc.save((a.account_number||'account')+'-statement.pdf');
+};
+
 window.renderInvoices=function(){
   const st=document.getElementById('inv-stats');
   if(!invTableOk){st.innerHTML='<div class="cw" style="margin-bottom:1rem"><strong>Invoices table not found.</strong> Run <code>supabase_invoices_schema.sql</code> in the Supabase SQL Editor, then reload.</div>';document.getElementById('inv-list').innerHTML='';return;}
@@ -2882,6 +3153,16 @@ window.openInvModal=(id)=>{
   document.getElementById('invmt').textContent=i?'Edit invoice':'New invoice';
   document.getElementById('invnum-sub').textContent=i?i.number:('Will be numbered '+invNextNumber());
   document.getElementById('i-id').value=i?i.id:'';
+  /* Account picker: populate from accounts, preselect the invoice's account
+     (by account_id, else by matching company name). */
+  const asel=document.getElementById('i-account');
+  if(asel){
+    asel.innerHTML='<option value="">&mdash; None / ad-hoc &mdash;</option>'+
+      accts.slice().sort((x,y)=>x.name.localeCompare(y.name)).map(a=>`<option value="${a.id}">${a.name} (${a.account_number})</option>`).join('');
+    let sel=i&&i.account_id?i.account_id:'';
+    if(!sel&&i){const co=normCo((i.bill_to||{}).company);const m=accts.find(a=>acctNames(a).includes(co));if(m)sel=m.id;}
+    asel.value=sel;
+  }
   const b=i?(i.bill_to||{}):{};
   document.getElementById('i-company').value=b.company||'';
   document.getElementById('i-contact').value=b.contact||'';
@@ -2921,6 +3202,7 @@ window.submitInv=async()=>{
     due_date:document.getElementById('i-due').value||null,
     currency:'ZAR',vat_pct:parseFloat(document.getElementById('i-vat').value)||0,
     bill_to:{company,contact:document.getElementById('i-contact').value.trim(),reg:document.getElementById('i-reg').value.trim(),email:document.getElementById('i-email').value.trim(),addr:document.getElementById('i-addr').value.trim()},
+    account_id:document.getElementById('i-account').value||null,
     paid_amount:(()=>{const v=parseFloat(document.getElementById('i-paid').value);return isNaN(v)?null:v;})(),
     paid_date:document.getElementById('i-paiddate').value||null,
     line_items:lines,bank_details:bank,notes:document.getElementById('i-notes').value,created_by:me.id};
@@ -3001,6 +3283,13 @@ window.printInv=(id)=>{
 };
 /* Newest known value of a bill_to field for a company, across all invoices
    (incl. archived) — the same memory the AI assistant uses. */
+window.invAcctPick=()=>{
+  const a=accts.find(x=>x.id===document.getElementById('i-account').value);
+  if(!a)return;
+  const setIf=(el,v)=>{const e=document.getElementById(el);if(e&&v)e.value=v;};
+  document.getElementById('i-company').value=a.name;
+  setIf('i-contact',a.contact);setIf('i-reg',a.reg);setIf('i-email',a.email);setIf('i-addr',a.addr);
+};
 function knownCustField(company,field){
   const key=(company||'').trim().toLowerCase();if(!key)return'';
   for(let n=invs.length-1;n>=0;n--){
