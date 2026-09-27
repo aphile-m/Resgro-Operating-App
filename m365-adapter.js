@@ -23,7 +23,7 @@ const GRAPH = 'https://graph.microsoft.com/v1.0';
 const TABLES = [
   'profiles', 'decisions', 'comments', 'verifications', 'attachments',
   'opportunities', 'documents', 'meeting_minutes', 'investor_targets',
-  'invoices', 'p1_versions', 'proposals',
+  'invoices', 'accounts', 'p1_versions', 'proposals',
 ];
 
 export async function createM365Client(cfg) {
