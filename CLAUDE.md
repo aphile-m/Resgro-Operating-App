@@ -7,21 +7,25 @@ targets, an AI invoice assistant, and an installable PWA. One monolithic app fil
 at `https://aphile-m.github.io/Resgro-Operating-App/`. The root `index.html` is a
 redirect stub → `m365.html` (the primary app); the app source is `app-supabase.html`.
 
-## Two backend stacks
+## Backend: Microsoft 365 (Supabase retired 2026-09-27)
 
-1. **Legacy → `app-supabase.html` on Supabase (being retired).** Root `index.html` is now a redirect to `m365.html`; the Supabase app is reachable only at `app-supabase.html`. Postgres + email/password auth
-   + an `send-invoice` Edge Function (Resend, key in Supabase Vault; cc/reply-to
-   `aphile@resgrocapital.com`). Project id `ewdloawwudqkdrstqfet`. The Supabase MCP
-   connector is **flaky** — it drops for minutes at a time; wait and retry, and it
-   comes back. Free tier **auto-pauses on inactivity** (restore via the connector if
-   the app won't load).
-2. **Parallel / target → `m365.html` on Microsoft 365** (Aphile wants to move off
-   Supabase onto his Business Basic suite). Generated from `app-supabase.html` by
-   `build-m365.mjs`; data/auth/storage/email all run on his own M365 tenant via
-   `m365-adapter.js` (a Supabase-compatible client over MSAL + SharePoint Lists +
-   drive + Graph `/me/sendMail`). **Full pattern + Azure setup + gotchas:
+**Live app = `m365.html` on the user's own Microsoft 365 tenant.** The migration is
+complete: data imported into SharePoint, and Aphile confirmed it works well.
+
+- **`m365.html`** is the sole live app (root `index.html` redirects to it). Generated
+  from `app-supabase.html` by `build-m365.mjs`; data/auth/storage/email all run on the
+  M365 tenant via `m365-adapter.js` (a Supabase-compatible client over MSAL +
+  SharePoint Lists + drive + Graph `/me/sendMail`). **Full pattern + Azure setup +
+  gotchas:
    `M365_APP_PLAYBOOK.md` — read it before touching the M365 build or building any
    new app on M365.**
+- **Legacy Supabase (project `ewdloawwudqkdrstqfet`) is RETIRED** — paused, kept only
+  as a cold backup; the full data export lives with the user (`resgro-export.json`).
+  Do not build against it or restore it unless the user explicitly asks. `send-invoice`
+  Edge Function + Resend/Vault are obsolete (M365 uses Graph `/me/sendMail`).
+  `app-supabase.html` remains **only** as the human-edited build source for
+  `build-m365.mjs`; it is not a live app and its `sb.from(...)` calls target the dead
+  DB — they exist so the build can swap them for the M365 adapter.
 
 ## M365 quick facts
 - Tenant `resgrocapital.com`; Operating-App SPA client ID
@@ -36,11 +40,13 @@ redirect stub → `m365.html` (the primary app); the app source is `app-supabase
 ## Working agreement
 - Branch `claude/focused-faraday-f5kxqj`; commit + push, then PR → merge to `main`.
   GitHub Pages redeploys `main` automatically.
-- After any `app-supabase.html` change, run `node build-m365.mjs` and commit
-  `m365.html` too, so the two stacks stay in lockstep.
+- Edit the app in `app-supabase.html` (the build source), then ALWAYS run
+  `node build-m365.mjs` and commit `m365.html` too — `m365.html` is the live app.
+- **New data table?** Add its name to the `TABLES` array in `m365-adapter.js` so the
+  SharePoint list auto-provisions. No SQL/migration needed (the adapter is
+  schema-agnostic: one list per table, each row a JSON blob). New per-row fields need
+  no schema change at all.
 - Confidential deal data must never be committed. **The repo is public** — seed data
   in `app-supabase.html` and any export JSON must stay out of git (`.gitignore` covers
   local settings). Making the repo private (GitHub Pro or Cloudflare Pages) is an
   open recommendation.
-- Schema changes to Supabase go through the MCP connector as migrations; mirror the
-  SQL into a repo file for the record.
