@@ -2,7 +2,7 @@
    Network-first for same-origin requests so every deploy shows up immediately;
    the cache is only a fallback for offline opens. Cross-origin requests
    (Supabase, esm.sh, Google Fonts, the Anthropic API) are never intercepted. */
-const V = 'resgro-v2';
+const V = 'resgro-v3';
 const CORE = [
   './',
   './index.html',
